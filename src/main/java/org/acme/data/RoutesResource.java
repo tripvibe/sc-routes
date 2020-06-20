@@ -140,12 +140,12 @@ public class RoutesResource {
 
         // RouteType
         final String rT = routeTypes(route_type);
-        final String rTT = route_type;
 
         _rd.forEach((k, v) -> {
             JSONObject ret = new JSONObject();
             ret.put("Type", rT);
-            ret.put("Name", routeName(k));
+            ret.put("Name", routeNameNumber(k, "route_name"));
+            ret.put("Number", routeNameNumber(k, "route_number"));
             ret.put("Direction", directionName(k,v));
             jList.add(ret);
         });
@@ -166,11 +166,15 @@ public class RoutesResource {
         return _rt.get(route_type);
     }
 
-    private String routeName(String route_id) {
+    private String routeNameNumber(String route_id, String nn) {
         // Route Name Service Call
         String routeName = routeService.route(route_id, devid, signature.generate("/v3/routes/" + route_id));
         JSONObject r = new JSONObject(routeName);
-        return r.getJSONObject("route").getString("route_name");
+        String rn = r.getJSONObject("route").getString("route_name");
+        String rnn =  r.getJSONObject("route").getString("route_number");
+        if (nn.equalsIgnoreCase("route_name"))
+            return rn;
+        return rnn;
     }
 
     private String directionName(String route_id, String direction_id) {

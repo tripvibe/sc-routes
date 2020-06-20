@@ -45,6 +45,7 @@
         <thead class="thead-dark">
         <tr>
             <th>Type</th>
+            <th>Number</th>
             <th>Name</th>
             <th>Direction</th>
         </tr>
@@ -119,11 +120,13 @@
     }
 
     function line(state, index) {
-        var name = state.Name;
         var type = state.Type;
+        var number = state.Number;
+        var name = state.Name;
         var direction = state.Direction;
         return "<tr>" +
                "<td>" + type + "</td>" +
+               "<td>" + number + "</td>" +
                "<td>" + name + "</td>" +
                "<td>" + direction + "</td></tr>";
     }
