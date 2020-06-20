@@ -113,9 +113,11 @@
     function eventHandler (e) {
         /* handle e */
         //console.log(e);
-        var state = JSON.parse(e.data);
-        //console.log(state);
-        state.forEach( element => $("tbody").append(line(element)) );
+        if (null != e.data) {
+            var state = JSON.parse(e.data);
+            //console.log(state);
+            state.forEach( element => $("tbody").append(line(element)) );
+        }
     }
 
     function line(state, index) {

@@ -117,6 +117,12 @@ public class RoutesResource {
     private String _departures(JSONObject obj) {
         // get departures based on geoloc
         JSONArray stops = obj.getJSONArray("stops");
+
+        // no results
+        if (stops.length() == 0) {
+            return null;
+        }
+
         String route_type = null;
         String stop_id = null;
         for(int i=0;i<stops.length();i++) {
