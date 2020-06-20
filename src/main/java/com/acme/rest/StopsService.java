@@ -16,6 +16,6 @@ interface StopsService {
     @GET
     @Path("/{latlong}")
     @Produces(MediaType.APPLICATION_JSON)
-    String routes(@PathParam String latlong, @QueryParam("devid") String devid, @QueryParam("signature") String signature);
+    String routes(@PathParam String latlong, @QueryParam("max_distance") String maxDistance, @QueryParam("devid") String devid, @QueryParam("signature") String signature);
 
 }

@@ -29,6 +29,9 @@ public class RoutesResource {
     @ConfigProperty(name = "com.acme.developerId")
     public String devid;
 
+    @ConfigProperty(name = "com.acme.maxDistance", defaultValue = "200")
+    public String maxDistance;
+
     @Inject
     Signature signature;
 
@@ -58,7 +61,7 @@ public class RoutesResource {
     @SseElementType(MediaType.APPLICATION_JSON)
     public Publisher<String> stream(@PathParam String latlong) {
 
-        List<String> stops = Multi.createFrom().item(stopsService.routes(latlong, devid, signature.generate("/v3/stops/location/" + latlong))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).collectItems().asList().await().indefinitely();
+        List<String> stops = Multi.createFrom().item(stopsService.routes(latlong, maxDistance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + maxDistance))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).collectItems().asList().await().indefinitely();
         List<Multi<String>> departures = Multi.createBy().merging().streams(
                 Multi.createFrom().iterable(stops).map(
                         x -> Multi.createFrom().item(_departures(new JSONObject(x))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()))
@@ -83,7 +86,7 @@ public class RoutesResource {
     @Path("/stops/{latlong}")
     @Produces(MediaType.APPLICATION_JSON)
     public String stops(@PathParam String latlong) {
-        return stopsService.routes(latlong, devid, signature.generate("/v3/stops/location/" + latlong));
+        return stopsService.routes(latlong, maxDistance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + maxDistance));
     }
 
     @GET
