@@ -84,7 +84,6 @@
     }
 
     function myCancelFunction() {
-        console.log("Cancel");
         $("tbody").empty();
         source.onmessage = function(){};
         var spinner = document.getElementById("spinner");
@@ -103,7 +102,7 @@
         if (host == 'localhost')  {
             var lat = document.getElementById('latitude').value ? document.getElementById('latitude').value : document.getElementById('latitude').placeholder;
             var lon = document.getElementById('longitude').value ? document.getElementById('longitude').value : document.getElementById('longitude').placeholder;
-            console.log(lat , lon);
+            //console.log(lat , lon);
             source = new EventSource("http://localhost:8080/api/routes/" + lat + "," + lon);
         } else {
             source = new EventSource("http://" + location.hostname + "/api/routes");
