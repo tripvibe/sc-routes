@@ -1,30 +1,25 @@
-# routes project
+# sc-routes project
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Routes near me. Using PTV Timetable API you need a developer id and apikey from [here.](http://timetableapi.ptv.vic.gov.au/swagger/ui/index)
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+Quarkus, mutiny reactive web, rest-easy, rest-client. Bootstrap, jquery UI.
 
-## Running the application in dev mode
-
-You can run your application in dev mode that enables live coding using:
-```
-./mvnw quarkus:dev
+Running locally
+```bash
+mvn quarkus:dev -DDEVID=<dev id> -DAPIKEY=<api key>
 ```
 
-## Packaging and running the application
+User Interface
+```bash
+http://localhost:8080/
+```
 
-The application can be packaged using `./mvnw package`.
-It produces the `routes-1.0-SNAPSHOT-runner.jar` file in the `/target` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/lib` directory.
+Client testing server sent events
+```bash
+http localhost:8080/api/routes/-37.8974484,145.088703 --stream
+```
 
-The application is now runnable using `java -jar target/routes-1.0-SNAPSHOT-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using: `./mvnw package -Pnative`.
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using: `./mvnw package -Pnative -Dquarkus.native.container-build=true`.
-
-You can then execute your native executable with: `./target/routes-1.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/building-native-image.
+Swagger exposes API
+```
+http://localhost:8080/swagger-ui/
+```
