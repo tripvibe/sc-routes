@@ -123,38 +123,42 @@ public class RoutesResource {
             return null;
         }
 
-        String route_type = null;
-        String stop_id = null;
-        for(int i=0;i<stops.length();i++) {
+        Map<String, String> _sd = new ConcurrentHashMap<String, String>();
+        for (int i = 0; i < stops.length(); i++) {
             JSONObject _stop = stops.getJSONObject(i);
-            route_type = _stop.optString("route_type");
-            stop_id = _stop.optString("stop_id");
+            _sd.put(_stop.optString("stop_id"), _stop.optString("route_type"));
         }
 
-        // Service call for departures
-        String departures = departuresService.departures(route_type, stop_id, devid, signature.generate("/v3/departures/route_type/" + route_type + "/stop/" + stop_id));
-
-        // we only want unique route and direction
-        JSONObject d = new JSONObject(departures);
-        JSONArray deps = d.getJSONArray("departures");
-        Map<String, String> _rd = new ConcurrentHashMap<String, String>();
-        for(int i=0;i<deps.length();i++) {
-            JSONObject _deps = deps.getJSONObject(i);
-            _rd.put(_deps.optString("route_id"), _deps.optString("direction_id"));
-        }
         List<JSONObject> jList = new ArrayList<JSONObject>();
 
-        // RouteType
-        final String rT = routeTypes(route_type);
+        _sd.forEach((k, v) -> {
+                    final String route_type = v;
+                    final String stop_id = k;
+                    // Service call for departures
+                    String departures = departuresService.departures(route_type, stop_id, devid, signature.generate("/v3/departures/route_type/" + route_type + "/stop/" + stop_id));
 
-        _rd.forEach((k, v) -> {
-            JSONObject ret = new JSONObject();
-            ret.put("Type", rT);
-            ret.put("Name", routeNameNumber(k, "route_name"));
-            ret.put("Number", routeNameNumber(k, "route_number"));
-            ret.put("Direction", directionName(k,v));
-            jList.add(ret);
-        });
+                    // we only want unique route and direction
+                    JSONObject d = new JSONObject(departures);
+                    JSONArray deps = d.getJSONArray("departures");
+                    Map<String, String> _rd = new ConcurrentHashMap<String, String>();
+                    for (int i = 0; i < deps.length(); i++) {
+                        JSONObject _deps = deps.getJSONObject(i);
+                        _rd.put(_deps.optString("route_id"), _deps.optString("direction_id"));
+                    }
+
+                    // RouteType
+                    final String rT = routeTypes(route_type);
+
+                    _rd.forEach((key, val) -> {
+                        JSONObject ret = new JSONObject();
+                        ret.put("Type", rT);
+                        ret.put("Name", routeNameNumber(key, "route_name"));
+                        ret.put("Number", routeNameNumber(key, "route_number"));
+                        ret.put("Direction", directionName(key, val));
+                        jList.add(ret);
+                    });
+                }
+        );
 
         return jList.toString();
     }
@@ -165,7 +169,7 @@ public class RoutesResource {
         JSONObject r = new JSONObject(routeTypes);
         JSONArray rts = r.getJSONArray("route_types");
         Map<String, String> _rt = new ConcurrentHashMap<String, String>();
-        for(int i=0;i<rts.length();i++) {
+        for (int i = 0; i < rts.length(); i++) {
             JSONObject _rts = rts.getJSONObject(i);
             _rt.put(_rts.optString("route_type"), _rts.optString("route_type_name"));
         }
@@ -177,7 +181,7 @@ public class RoutesResource {
         String routeName = routeService.route(route_id, devid, signature.generate("/v3/routes/" + route_id));
         JSONObject r = new JSONObject(routeName);
         String rn = r.getJSONObject("route").getString("route_name");
-        String rnn =  r.getJSONObject("route").getString("route_number");
+        String rnn = r.getJSONObject("route").getString("route_number");
         if (nn.equalsIgnoreCase("route_name"))
             return rn;
         return rnn;
@@ -189,7 +193,7 @@ public class RoutesResource {
         JSONObject r = new JSONObject(directionName);
         JSONArray rts = r.getJSONArray("directions");
         Map<String, String> _rt = new ConcurrentHashMap<String, String>();
-        for(int i=0;i<rts.length();i++) {
+        for (int i = 0; i < rts.length(); i++) {
             JSONObject _rts = rts.getJSONObject(i);
             _rt.put(_rts.optString("direction_id"), _rts.optString("direction_name"));
         }
