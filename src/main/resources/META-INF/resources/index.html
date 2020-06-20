@@ -26,8 +26,15 @@
         </div>
         <div class="form-group">
             <div class="col-md-4">
-                <label class="col-md-4 control-label" for="longitude">langitude</label>
+                <label class="col-md-4 control-label" for="longitude">longitude</label>
                 <input id="longitude" name="longitude" type="text" placeholder="145.088703"
+                       class="form-control input-md">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-4">
+                <label class="col-md-4 control-label" for="longitude">distance(m)</label>
+                <input id="distance" name="distance" type="text" placeholder="200"
                        class="form-control input-md">
             </div>
         </div>
@@ -102,10 +109,11 @@
         if (host == 'localhost')  {
             var lat = document.getElementById('latitude').value ? document.getElementById('latitude').value : document.getElementById('latitude').placeholder;
             var lon = document.getElementById('longitude').value ? document.getElementById('longitude').value : document.getElementById('longitude').placeholder;
-            //console.log(lat , lon);
-            source = new EventSource("http://localhost:8080/api/routes/" + lat + "," + lon);
+            var dis = document.getElementById('distance').value ? document.getElementById('distance').value : document.getElementById('distance').placeholder;
+            //console.log(lat , lon, dis);
+            source = new EventSource("http://localhost:8080/api/routes/" + lat + "," + lon + "/" + dis);
         } else {
-            source = new EventSource("http://" + location.hostname + "/api/routes");
+            source = new EventSource("http://" + location.hostname + "/api/routes" + lat + "," + lon + "/" + dis);
         }
         source.onmessage = eventHandler;
     }
