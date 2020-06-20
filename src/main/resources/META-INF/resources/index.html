@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Routes Near Me</title>
+
+    <link rel="stylesheet" type="text/css"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Routes Near Me</h1>
+
+    <p>Enter latitude and longitude and tab out to reset. Server sends events every 10sec.</p>
+
+    <!-- Text input-->
+    <form class="form-inline" id="form">
+        <div class="form-group">
+            <div class="col-md-4">
+                <label class="col-md-4 control-label" for="latitude">latitude</label>
+                <input id="latitude" name="latitude" type="text" placeholder="-37.8974484"
+                       class="form-control input-md">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-4">
+                <label class="col-md-4 control-label" for="longitude">langitude</label>
+                <input id="longitude" name="longitude" type="text" placeholder="145.088703"
+                       class="form-control input-md">
+            </div>
+        </div>
+        <div class="form-group">
+            <button type="button" id="btnFetch" class="btn btn-primary mb-2">Submit</button>
+        </div>
+        <div class="form-group" id="Cancel">
+            <button type="button" id="btnCancel" class="btn btn-primary mb-2">Cancel</button>
+        </div>
+    </form>
+
+    <br>
+
+    <table class="table table-striped">
+        <thead class="thead-dark">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Direction</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+
+</div>
+
+
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js"></script>
+
+<script>
+
+    var x = document.getElementById("btnCancel");
+    x.addEventListener("click", myCancelFunction, true);
+
+    var y = document.getElementById("btnFetch");
+    y.addEventListener("click", myClickFunction, true);
+
+    var source
+
+    function myClickFunction() {
+        $("tbody").empty();
+        start();
+        // disable button
+        $(this).prop("disabled", true);
+        $(this).html(
+          `<div id="spinner"><span class="spinner-border spinner-border-sm float-right" role="status" aria-hidden="true"></span> Loading...</div>`
+        );
+    }
+
+    function myCancelFunction() {
+        console.log("Cancel");
+        $("tbody").empty();
+        source.onmessage = function(){};
+        var spinner = document.getElementById("spinner");
+        spinner.parentNode.removeChild(spinner);
+        var newElement = document.createElement('div');
+        newElement.innerHTML = '<button type="button" id="btnFetch" class="btn btn-primary mb-2"></button>';
+        newElement.addEventListener("click", myClickFunction, true);
+        newElement.text = "Submit";
+        $(this).insertBefore(this, newElement);
+        document.getElementById("btnFetch").disabled = false;
+        document.getElementById("btnFetch").innerHTML = "Submit"
+    }
+
+    function start() {
+        var host = location.hostname
+        if (host == 'localhost')  {
+            var lat = document.getElementById('latitude').value ? document.getElementById('latitude').value : document.getElementById('latitude').placeholder;
+            var lon = document.getElementById('longitude').value ? document.getElementById('longitude').value : document.getElementById('longitude').placeholder;
+            console.log(lat , lon);
+            source = new EventSource("http://localhost:8080/api/routes/" + lat + "," + lon);
+        } else {
+            source = new EventSource("http://" + location.hostname + "/api/routes");
+        }
+        source.onmessage = eventHandler;
+    }
+
+    function eventHandler (e) {
+        /* handle e */
+        //console.log(e);
+        var state = JSON.parse(e.data);
+        //console.log(state);
+        state.forEach( element => $("tbody").append(line(element)) );
+    }
+
+    function line(state, index) {
+        var name = state.Name;
+        var type = state.Type;
+        var direction = state.Direction;
+        return "<tr>" +
+               "<td>" + name + "</td>" +
+               "<td>" + type + "</td>" +
+               "<td>" + direction + "</td></tr>";
+    }
+
+
+
+</script>
+</html>
