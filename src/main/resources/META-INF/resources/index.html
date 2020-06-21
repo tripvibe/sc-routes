@@ -92,7 +92,7 @@
 
     function myCancelFunction() {
         $("tbody").empty();
-        source.onmessage = function(){};
+        source.close();
         var spinner = document.getElementById("spinner");
         spinner.parentNode.removeChild(spinner);
         var newElement = document.createElement('div');
