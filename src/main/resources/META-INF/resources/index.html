@@ -121,7 +121,7 @@
     function eventHandler (e) {
         /* handle e */
         //console.log(e);
-        if (null != e.data) {
+        if ("" != e.data) {
             var state = JSON.parse(e.data);
             //console.log(state);
             state.forEach( element => $("tbody").append(line(element)) );
