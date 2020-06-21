@@ -11,6 +11,8 @@ import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -19,12 +21,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Path("/api")
 public class RoutesResource {
+
+    private final Logger log = LoggerFactory.getLogger(RoutesResource.class);
 
     @ConfigProperty(name = "com.acme.developerId")
     public String devid;
@@ -58,12 +63,6 @@ public class RoutesResource {
     @SseElementType(MediaType.APPLICATION_JSON)
     public Publisher<String> stream(@PathParam String latlong, @PathParam String distance) {
 
-        List<String> stops = Multi.createFrom().item(stopsService.routes(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).collectItems().asList().await().indefinitely();
-        List<Multi<String>> departures = Multi.createBy().merging().streams(
-                Multi.createFrom().iterable(stops).map(
-                        x -> Multi.createFrom().item(_departures(new JSONObject(x))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()))
-        ).collectItems().asList().await().indefinitely();
-
 //        Multi trams = Multi.createFrom().iterable(Arrays.asList("{\"vehicle_type\" : \"Tram\", \"route_name\": \"Yarra\", \"stop_name\": \"Oakleigh SC/Atherton Rd\", \"direction_name\": \"City\" }"));
 //        Multi buses = Multi.createFrom().iterable(Arrays.asList("{\"vehicle_type\" : \"Bus\", \"route_name\": \"Maxi\", \"stop_name\": \"Overton Rd\", \"direction_name\": \"Country\" }"));
 //        Multi trains = Multi.createFrom().iterable(Arrays.asList("{\"vehicle_type\" : \"Train\", \"route_name\": \"Mikey\", \"stop_name\": \"The Edge\", \"direction_name\": \"City\" }"));
@@ -74,9 +73,21 @@ public class RoutesResource {
 
         Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(10)).onOverflow().drop();
         return ticks.onItem().produceMulti(
-                x -> departures.iterator().next()
+                x -> _streamGenerate(latlong, distance)
         ).merge();
 
+    }
+
+    public Multi<String> _streamGenerate(String latlong, String distance) {
+        List<String> stops = Multi.createFrom().item(stopsService.routes(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).collectItems().asList().await().indefinitely();
+        log.info("Found " + stops.size() + " stops ...");
+
+        List<Multi<String>> departures = Multi.createBy().merging().streams(
+                Multi.createFrom().iterable(stops).map(
+                        x -> Multi.createFrom().item(_departures(new JSONObject(x))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()))
+        ).collectItems().asList().await().indefinitely();
+
+        return departures.iterator().next();
     }
 
     @GET
@@ -120,6 +131,7 @@ public class RoutesResource {
 
         // no results
         if (stops.length() == 0) {
+            log.info("::_departures passed zero length stops returning");
             return null;
         }
 
@@ -145,6 +157,7 @@ public class RoutesResource {
                         JSONObject _deps = deps.getJSONObject(i);
                         _rd.put(_deps.optString("route_id"), _deps.optString("direction_id"));
                     }
+                    log.info("::_departures found " + _rd.size() + " processing...");
 
                     // RouteType
                     final String rT = routeTypes(route_type);
@@ -160,6 +173,7 @@ public class RoutesResource {
                 }
         );
 
+        log.info("Found " + jList.size() + " departure routes nearby ...");
         return jList.toString();
     }
 
