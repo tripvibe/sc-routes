@@ -3,6 +3,7 @@ package org.acme.data;
 import com.acme.rest.*;
 import com.acme.util.Signature;
 import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -21,7 +22,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,23 +57,25 @@ public class RoutesResource {
     @RestClient
     DirectionService directionService;
 
+    private Multi<String> stopsMulti(String latlong, String distance) {
+        return Multi.createFrom().item(stopsService.routes(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+    }
+
+    private Uni<List<Multi<String>>> departMulti(String latlong, String distance) {
+        return Multi.createBy().merging().streams(
+                Multi.createFrom().iterable(stopsMulti(latlong, distance).collectItems().asList().await().indefinitely()).map(
+                        x -> Multi.createFrom().item(_departures(new JSONObject(x))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()))
+        ).collectItems().asList();
+    }
+
     @GET
     @Path("/routes/{latlong}/{distance}")
     @Produces(MediaType.SERVER_SENT_EVENTS)
     @SseElementType(MediaType.APPLICATION_JSON)
     public Publisher<String> stream(@PathParam String latlong, @PathParam String distance) {
-
-//        Multi trams = Multi.createFrom().iterable(Arrays.asList("{\"vehicle_type\" : \"Tram\", \"route_name\": \"Yarra\", \"stop_name\": \"Oakleigh SC/Atherton Rd\", \"direction_name\": \"City\" }"));
-//        Multi buses = Multi.createFrom().iterable(Arrays.asList("{\"vehicle_type\" : \"Bus\", \"route_name\": \"Maxi\", \"stop_name\": \"Overton Rd\", \"direction_name\": \"Country\" }"));
-//        Multi trains = Multi.createFrom().iterable(Arrays.asList("{\"vehicle_type\" : \"Train\", \"route_name\": \"Mikey\", \"stop_name\": \"The Edge\", \"direction_name\": \"City\" }"));
-//
-//        List<String> routes = (List<String>) Multi.createBy().merging().streams(trams, buses, trains)
-//                .collectItems().asList()
-//                .await().indefinitely();
-
         Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(10)).onOverflow().drop();
         return ticks.onItem().produceMulti(
-                x -> _streamGenerate(latlong, distance)
+                x -> departMulti(latlong, distance).await().indefinitely().iterator().next()
         ).merge();
 
     }
@@ -163,12 +165,16 @@ public class RoutesResource {
                     final String rT = routeTypes(route_type);
 
                     _rd.forEach((key, val) -> {
-                        JSONObject ret = new JSONObject();
-                        ret.put("Type", rT);
-                        ret.put("Name", routeNameNumber(key, "route_name"));
-                        ret.put("Number", routeNameNumber(key, "route_number"));
-                        ret.put("Direction", directionName(key, val));
-                        jList.add(ret);
+                        try {
+                            JSONObject ret = new JSONObject();
+                            ret.put("Type", rT);
+                            ret.put("Name", routeNameNumber(key, "route_name"));
+                            ret.put("Number", routeNameNumber(key, "route_number"));
+                            ret.put("Direction", directionName(key, val));
+                            jList.add(ret);
+                        } catch (org.json.JSONException ex) {
+                            ex.printStackTrace();
+                        }
                     });
                 }
         );
