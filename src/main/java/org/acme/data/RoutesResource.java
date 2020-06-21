@@ -22,6 +22,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -132,6 +133,7 @@ public class RoutesResource {
         }
 
         List<JSONObject> jList = new ArrayList<JSONObject>();
+        Map<String, String> duplicates = new ConcurrentHashMap<String, String>();
 
         _sd.forEach((k, v) -> {
                     final String route_type = v;
@@ -155,11 +157,16 @@ public class RoutesResource {
                     _rd.forEach((key, val) -> {
                         try {
                             JSONObject ret = new JSONObject();
-                            ret.put("Type", rT);
-                            ret.put("Name", routeNameNumber(key, "route_name"));
-                            ret.put("Number", routeNameNumber(key, "route_number"));
-                            ret.put("Direction", directionName(key, val));
-                            jList.add(ret);
+                            String routeName = routeNameNumber(key, "route_name");
+                            String routeNumber = routeNameNumber(key, "route_number");
+                            if (!duplicates.containsKey(routeName)) {
+                                ret.put("Type", rT);
+                                ret.put("Name", routeName);
+                                ret.put("Number", routeNumber);
+                                ret.put("Direction", directionName(key, val));
+                                jList.add(ret);
+                            }
+                            duplicates.put(routeName, routeNumber);
                         } catch (org.json.JSONException ex) {
                             ex.printStackTrace();
                         }
