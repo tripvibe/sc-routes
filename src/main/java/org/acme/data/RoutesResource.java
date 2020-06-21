@@ -80,18 +80,6 @@ public class RoutesResource {
 
     }
 
-    public Multi<String> _streamGenerate(String latlong, String distance) {
-        List<String> stops = Multi.createFrom().item(stopsService.routes(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).collectItems().asList().await().indefinitely();
-        log.info("Found " + stops.size() + " stops ...");
-
-        List<Multi<String>> departures = Multi.createBy().merging().streams(
-                Multi.createFrom().iterable(stops).map(
-                        x -> Multi.createFrom().item(_departures(new JSONObject(x))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()))
-        ).collectItems().asList().await().indefinitely();
-
-        return departures.iterator().next();
-    }
-
     @GET
     @Path("/stops/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
