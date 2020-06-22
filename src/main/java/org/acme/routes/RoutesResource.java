@@ -205,7 +205,7 @@ public class RoutesResource {
                                     ret.put("Name", routeDAO.getName());
                                     ret.put("Number", routeDAO.getNumber());
                                     ret.put("Direction", routeDAO.getDirection());
-                                    ret.put("StopName", _sn.get(k));
+                                    ret.put("StopName", routeDAO.getStopName());
                                     jList.add(ret);
                                 }
                                 duplicates.put(routeName, routeNumber);
@@ -220,7 +220,7 @@ public class RoutesResource {
                                     ret.put("Direction", routeDirection);
                                     ret.put("StopName", _sn.get(k));
                                     jList.add(ret);
-                                    routesCache.put(Integer.valueOf(key), new RouteDAO(rT, routeName, routeNumber, routeDirection));
+                                    routesCache.put(Integer.valueOf(key), new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k)));
                                 }
                                 duplicates.put(routeName, routeNumber);
                             }

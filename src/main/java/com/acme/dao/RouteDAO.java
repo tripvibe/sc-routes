@@ -6,17 +6,19 @@ import org.infinispan.protostream.annotations.ProtoField;
 public class RouteDAO {
 
     @ProtoFactory
-    public RouteDAO(String type, String name, String number, String direction) {
+    public RouteDAO(String type, String name, String number, String direction, String stopName) {
         this.type = type;
         this.name = name;
         this.number = number;
         this.direction = direction;
+        this.stopName = stopName;
     }
 
     private String type;
     private String name;
     private String number;
     private String direction;
+    private String stopName;
 
     @ProtoField(number = 1)
     public String getType() {
@@ -48,6 +50,15 @@ public class RouteDAO {
     @ProtoField(number = 4)
     public String getDirection() {
         return direction;
+    }
+
+    @ProtoField(number = 5)
+    public String getStopName() {
+        return stopName;
+    }
+
+    public void setStopName(String stopName) {
+        this.stopName = stopName;
     }
 
     public void setDirection(String direction) {
