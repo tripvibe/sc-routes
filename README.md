@@ -4,6 +4,11 @@ Routes near me. Using PTV Timetable API you need a developer id and apikey from 
 
 Quarkus, mutiny reactive web, rest-easy, rest-client. Bootstrap, jquery UI.
 
+Start infinispan locally
+```bash
+make podman-run 
+```
+
 Running locally
 ```bash
 mvn quarkus:dev -DDEVID=<dev id> -DAPIKEY=<api key>
