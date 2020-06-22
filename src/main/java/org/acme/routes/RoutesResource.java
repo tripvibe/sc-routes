@@ -1,12 +1,18 @@
-package org.acme.data;
+package org.acme.routes;
 
+import com.acme.dao.RouteDAO;
 import com.acme.rest.*;
 import com.acme.util.Signature;
+import io.quarkus.infinispan.client.Remote;
+import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.infinispan.client.hotrod.DefaultTemplate;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.jboss.resteasy.annotations.SseElementType;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.json.JSONArray;
@@ -15,19 +21,24 @@ import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Path("/api")
+@ApplicationScoped
 public class RoutesResource {
 
     private final Logger log = LoggerFactory.getLogger(RoutesResource.class);
@@ -58,6 +69,19 @@ public class RoutesResource {
     @RestClient
     DirectionService directionService;
 
+    @Inject
+    RemoteCacheManager cacheManager;
+
+    @Inject
+    @Remote("routes")
+    RemoteCache<Integer, RouteDAO> routesCache;
+
+    void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
+        log.info("On start - clean and load data");
+        RemoteCache<Integer, RouteDAO> routes = cacheManager.administration().getOrCreateCache("routes", DefaultTemplate.REPL_ASYNC);
+        log.info("Existing stores are " + cacheManager.getCacheNames().toString());
+    }
+
     private Multi<String> stopsMulti(String latlong, String distance) {
         return Multi.createFrom().item(stopsService.routes(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
     }
@@ -75,10 +99,13 @@ public class RoutesResource {
     @SseElementType(MediaType.APPLICATION_JSON)
     public Publisher<String> stream(@PathParam String latlong, @PathParam String distance) {
         Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(10)).onOverflow().drop();
-        return ticks.onItem().produceMulti(
-                x -> departMulti(latlong, distance).await().indefinitely().iterator().next()
-        ).merge();
-
+        return ticks.on().subscribed(subscription -> log.info("We are subscribed!"))
+                .on().cancellation(() -> log.info("Downstream has cancelled the interaction"))
+                .onFailure().invoke(failure -> log.warn("Failed with " + failure.getMessage()))
+                .onCompletion().invoke(() -> log.info("Completed"))
+                .onItem().produceMulti(
+                        x -> departMulti(latlong, distance).await().indefinitely().iterator().next()
+                ).merge();
     }
 
     @GET
@@ -116,6 +143,12 @@ public class RoutesResource {
         return directionService.directions(route_id, devid, signature.generate("/v3/directions/route/" + route_id));
     }
 
+    @DELETE
+    @Path("/cachecleaner")
+    public void cleanCache() {
+        cleanupCaches(routesCache);
+    }
+
     private String _departures(JSONObject obj) {
         // get departures based on geoloc
         JSONArray stops = obj.getJSONArray("stops");
@@ -123,7 +156,7 @@ public class RoutesResource {
         // no results
         if (stops.length() == 0) {
             log.info("::_departures passed zero length stops returning");
-            return null;
+            return "";
         }
 
         Map<String, String> _sd = new ConcurrentHashMap<String, String>();
@@ -134,6 +167,8 @@ public class RoutesResource {
 
         List<JSONObject> jList = new ArrayList<JSONObject>();
         Map<String, String> duplicates = new ConcurrentHashMap<String, String>();
+
+        log.info("Cache contains " + routesCache.size() + " items ");
 
         _sd.forEach((k, v) -> {
                     final String route_type = v;
@@ -149,26 +184,44 @@ public class RoutesResource {
                         JSONObject _deps = deps.getJSONObject(i);
                         _rd.put(_deps.optString("route_id"), _deps.optString("direction_id"));
                     }
-                    log.info("::_departures found " + _rd.size() + " processing...");
+                    log.debug("::_departures found " + _rd.size() + " processing...");
 
                     // RouteType
                     final String rT = routeTypes(route_type);
 
+                    // Populate return list using cache if it exists
                     _rd.forEach((key, val) -> {
                         try {
                             JSONObject ret = new JSONObject();
-                            String routeName = routeNameNumber(key, "route_name");
-                            String routeNumber = routeNameNumber(key, "route_number");
-                            if (!duplicates.containsKey(routeName)) {
-                                ret.put("Type", rT);
-                                ret.put("Name", routeName);
-                                ret.put("Number", routeNumber);
-                                ret.put("Direction", directionName(key, val));
-                                jList.add(ret);
+                            if (routesCache.containsKey(Integer.valueOf(key))) {
+                                log.debug("Reading " + key + " from cache...");
+                                RouteDAO routeDAO = routesCache.get(Integer.valueOf(key));
+                                String routeName = routeDAO.getName();
+                                String routeNumber = routeDAO.getNumber();
+                                if (!duplicates.containsKey(routeName)) {
+                                    ret.put("Type", routeDAO.getType());
+                                    ret.put("Name", routeDAO.getName());
+                                    ret.put("Number", routeDAO.getNumber());
+                                    ret.put("Direction", routeDAO.getDirection());
+                                    jList.add(ret);
+                                }
+                                duplicates.put(routeName, routeNumber);
+                            } else {
+                                String routeName = routeNameNumber(key, "route_name");
+                                String routeNumber = routeNameNumber(key, "route_number");
+                                if (!duplicates.containsKey(routeName)) {
+                                    String routeDirection = directionName(key, val);
+                                    ret.put("Type", rT);
+                                    ret.put("Name", routeName);
+                                    ret.put("Number", routeNumber);
+                                    ret.put("Direction", routeDirection);
+                                    jList.add(ret);
+                                    routesCache.put(Integer.valueOf(key), new RouteDAO(rT, routeName, routeNumber, routeDirection));
+                                }
+                                duplicates.put(routeName, routeNumber);
                             }
-                            duplicates.put(routeName, routeNumber);
                         } catch (org.json.JSONException ex) {
-                            ex.printStackTrace();
+                            log.error("JSON Parse error." + ex);
                         }
                     });
                 }
@@ -214,4 +267,14 @@ public class RoutesResource {
         }
         return _rt.get(direction_id);
     }
+
+    private void cleanupCaches(RemoteCache<Integer, RouteDAO> routes) {
+        try {
+            Uni.createFrom().item(routes.clearAsync().get(10, TimeUnit.SECONDS))
+                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
+        } catch (Exception e) {
+            log.error("Something went wrong clearing data stores." + e);
+        }
+    }
+
 }
