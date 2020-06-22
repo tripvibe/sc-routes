@@ -55,6 +55,7 @@
             <th>Number</th>
             <th>Name</th>
             <th>Direction</th>
+            <th>StopName</th>
         </tr>
         </thead>
         <tbody>
@@ -133,14 +134,14 @@
         var number = state.Number;
         var name = state.Name;
         var direction = state.Direction;
+        var stopName = state.StopName;
         return "<tr>" +
                "<td>" + type + "</td>" +
                "<td>" + number + "</td>" +
                "<td>" + name + "</td>" +
-               "<td>" + direction + "</td></tr>";
+               "<td>" + direction + "</td>" +
+               "<td>" + stopName + "</tr>";
     }
-
-
 
 </script>
 </html>

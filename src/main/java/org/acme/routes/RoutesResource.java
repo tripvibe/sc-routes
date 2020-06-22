@@ -144,7 +144,7 @@ public class RoutesResource {
     }
 
     @DELETE
-    @Path("/cachecleaner")
+    @Path("/clearcache")
     public void cleanCache() {
         cleanupCaches(routesCache);
     }
@@ -160,9 +160,11 @@ public class RoutesResource {
         }
 
         Map<String, String> _sd = new ConcurrentHashMap<String, String>();
+        Map<String, String> _sn = new ConcurrentHashMap<String, String>();
         for (int i = 0; i < stops.length(); i++) {
             JSONObject _stop = stops.getJSONObject(i);
             _sd.put(_stop.optString("stop_id"), _stop.optString("route_type"));
+            _sn.put(_stop.optString("stop_id"), _stop.optString("stop_name"));
         }
 
         List<JSONObject> jList = new ArrayList<JSONObject>();
@@ -203,6 +205,7 @@ public class RoutesResource {
                                     ret.put("Name", routeDAO.getName());
                                     ret.put("Number", routeDAO.getNumber());
                                     ret.put("Direction", routeDAO.getDirection());
+                                    ret.put("StopName", _sn.get(k));
                                     jList.add(ret);
                                 }
                                 duplicates.put(routeName, routeNumber);
@@ -215,6 +218,7 @@ public class RoutesResource {
                                     ret.put("Name", routeName);
                                     ret.put("Number", routeNumber);
                                     ret.put("Direction", routeDirection);
+                                    ret.put("StopName", _sn.get(k));
                                     jList.add(ret);
                                     routesCache.put(Integer.valueOf(key), new RouteDAO(rT, routeName, routeNumber, routeDirection));
                                 }
@@ -249,6 +253,7 @@ public class RoutesResource {
         String routeName = routeService.route(route_id, devid, signature.generate("/v3/routes/" + route_id));
         JSONObject r = new JSONObject(routeName);
         String rn = r.getJSONObject("route").getString("route_name");
+        log.debug("routeNameNumber " + r);
         String rnn = r.getJSONObject("route").getString("route_number");
         if (nn.equalsIgnoreCase("route_name"))
             return rn;
@@ -260,6 +265,7 @@ public class RoutesResource {
         String directionName = directionService.directions(route_id, devid, signature.generate("/v3/directions/route/" + route_id));
         JSONObject r = new JSONObject(directionName);
         JSONArray rts = r.getJSONArray("directions");
+        log.debug("directionName " + r);
         Map<String, String> _rt = new ConcurrentHashMap<String, String>();
         for (int i = 0; i < rts.length(); i++) {
             JSONObject _rts = rts.getJSONObject(i);
