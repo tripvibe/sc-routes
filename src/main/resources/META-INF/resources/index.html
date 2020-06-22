@@ -106,11 +106,11 @@
     }
 
     function start() {
+        var lat = document.getElementById('latitude').value ? document.getElementById('latitude').value : document.getElementById('latitude').placeholder;
+        var lon = document.getElementById('longitude').value ? document.getElementById('longitude').value : document.getElementById('longitude').placeholder;
+        var dis = document.getElementById('distance').value ? document.getElementById('distance').value : document.getElementById('distance').placeholder;
         var host = location.hostname
         if (host == 'localhost')  {
-            var lat = document.getElementById('latitude').value ? document.getElementById('latitude').value : document.getElementById('latitude').placeholder;
-            var lon = document.getElementById('longitude').value ? document.getElementById('longitude').value : document.getElementById('longitude').placeholder;
-            var dis = document.getElementById('distance').value ? document.getElementById('distance').value : document.getElementById('distance').placeholder;
             //console.log(lat , lon, dis);
             source = new EventSource("http://localhost:8080/api/routes/" + lat + "," + lon + "/" + dis);
         } else {
