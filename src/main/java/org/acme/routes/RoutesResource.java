@@ -109,6 +109,13 @@ public class RoutesResource {
     }
 
     @GET
+    @Path("/search/routes/{latlong}/{distance}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Publisher<String> oneShot(@PathParam String latlong, @PathParam String distance) {
+        return departMulti(latlong, distance).await().indefinitely().iterator().next();
+    }
+
+    @GET
     @Path("/stops/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
     public String stops(@PathParam String latlong, @PathParam String distance) {
