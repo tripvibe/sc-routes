@@ -104,6 +104,7 @@ pipeline {
                             if [ $rc -eq 1 ]; then
                                 echo " 🏗 no app build - creating one, make sure secret ${NAME} exists first 🏗"
                                 oc -n ${TARGET_NAMESPACE} new-app ${S2I_IMAGE}~${GIT_REPO} --name=${NAME}
+                                oc patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                                 oc -n ${TARGET_NAMESPACE} env --from=secret/sc-routes dc/sc-routes
                                 oc -n ${TARGET_NAMESPACE} logs -f bc/${NAME}
                             fi
@@ -122,7 +123,7 @@ pipeline {
                     steps {
                         script {
                             sh '''
-                            oc -n ${TARGET_NAMESPACE} get Subscription infinispan || rc=$?
+                            oc -n ${TARGET_NAMESPACE} get infinispan infinispan || rc=$?
                             if [ $rc -eq 1 ]; then
                                 echo " 🏗 no infinispan cluster - creating 🏗"
                                 oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-subscription.yaml
