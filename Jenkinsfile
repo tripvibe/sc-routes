@@ -104,7 +104,7 @@ pipeline {
                             if [ $rc -eq 1 ]; then
                                 echo " 🏗 no app build - creating one, make sure secret ${NAME} exists first 🏗"
                                 oc -n ${TARGET_NAMESPACE} new-app --as-deployment-config ${S2I_IMAGE}~${GIT_REPO} --name=${NAME}
-                                oc patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
+                                oc -n ${TARGET_NAMESPACE} patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                                 oc -n ${TARGET_NAMESPACE} env --from=secret/sc-routes dc/sc-routes
                                 oc -n ${TARGET_NAMESPACE} logs -f bc/${NAME}
                             fi
