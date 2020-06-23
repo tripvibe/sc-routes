@@ -1,0 +1,19 @@
+apiVersion: infinispan.org/v1
+kind: Infinispan
+metadata:
+  finalizers:
+    - finalizer.infinispan.org
+  name: infinispan
+spec:
+  container:
+    cpu: 500m
+    memory: 512Mi
+  replicas: 2
+  security:
+    endpointEncryption:
+      certSecretName: ""
+      certServiceName: ""
+      type: ""
+    endpointSecretName: infinispan-generated-secret
+  service:
+    type: Cache
