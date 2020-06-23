@@ -103,13 +103,14 @@ pipeline {
                             oc -n ${TARGET_NAMESPACE} get bc ${NAME} || rc=$?
                             if [ $rc -eq 1 ]; then
                                 echo " 🏗 no app build - creating one, make sure secret ${NAME} exists first 🏗"
-                                oc -n ${TARGET_NAMESPACE} new-app ${S2I_IMAGE}~${GIT_REPO} --name=${NAME}
+                                oc -n ${TARGET_NAMESPACE} new-app --as-deployment-config ${S2I_IMAGE}~${GIT_REPO} --name=${NAME}
                                 oc patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                                 oc -n ${TARGET_NAMESPACE} env --from=secret/sc-routes dc/sc-routes
                                 oc -n ${TARGET_NAMESPACE} logs -f bc/${NAME}
                             fi
                             echo " 🏗 build found - starting it  🏗"
                             oc -n ${TARGET_NAMESPACE} start-build ${NAME} --follow
+                            oc -n ${TARGET_NAMESPACE} expose svc/${NAME}
                             '''
                         }
                     }
@@ -128,9 +129,10 @@ pipeline {
                                 echo " 🏗 no infinispan cluster - creating 🏗"
                                 oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-subscription.yaml
                                 oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-operatorgroup.yaml
-                                sleep 5
+                                sleep 10
                                 oc -n ${TARGET_NAMESPACE} wait pod -l name=infinispan-operator-alm-owned --for=condition=Ready --timeout=300s
                                 oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-cr.yaml
+                                sleep 10
                                 oc -n ${TARGET_NAMESPACE} wait pod -l app=infinispan-pod --for=condition=Ready --timeout=300s
                             fi
                             echo " 🏗 found infinispan cluster - skipping  🏗"                            
