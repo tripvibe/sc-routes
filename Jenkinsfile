@@ -126,6 +126,8 @@ pipeline {
                             if [ $rc -eq 1 ]; then
                                 echo " 🏗 no infinispan cluster - creating 🏗"
                                 oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-subscription.yaml
+                                oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-operatorgroup.yaml
+                                sleep 5
                                 oc -n ${TARGET_NAMESPACE} wait pod -l name=infinispan-operator-alm-owned --for=condition=Ready --timeout=300s
                                 oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-cr.yaml
                                 oc -n ${TARGET_NAMESPACE} wait pod -l app=infinispan-pod --for=condition=Ready --timeout=300s
