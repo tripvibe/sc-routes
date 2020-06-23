@@ -101,9 +101,10 @@ pipeline {
                             sh '''
                             oc -n ${TARGET_NAMESPACE} get bc ${NAME}-build || rc=$?
                             if [ $rc -eq 1 ]; then
-                                echo " 🏗 no app build - creating one 🏗"
+                                echo " 🏗 no app build - creating one, make sure secret ${NAME} exists first 🏗"
                                 oc -n ${TARGET_NAMESPACE} new-app ${S2I_IMAGE}~${GIT_REPO} --name=${NAME}
-                                oc -n ${TARGET_NAMESPACE} logs -f bc/${NAME}                                                                 
+                                oc -n ${TARGET_NAMESPACE} env --from=secret/sc-routes dc/sc-routes
+                                oc -n ${TARGET_NAMESPACE} logs -f bc/${NAME}
                             fi
                             echo " 🏗 build found - starting it  🏗"
                             oc -n ${TARGET_NAMESPACE} start-build ${NAME} --follow
