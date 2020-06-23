@@ -89,48 +89,50 @@ pipeline {
             }
         }
 
-        stage("Build (Compile App)") {
-            stage("Build App") {
-                agent {
-                    node {
-                        label "master"
+        stage("Build and Deploy") {
+            parallel {
+                stage("Build App") {
+                    agent {
+                        node {
+                            label "master"
+                        }
+                    }
+                    steps {
+                        script {
+                            sh '''
+                            oc -n ${TARGET_NAMESPACE} get bc ${NAME}-build || rc=$?
+                            if [ $rc -eq 1 ]; then
+                                echo " 🏗 no app build - creating one, make sure secret ${NAME} exists first 🏗"
+                                oc -n ${TARGET_NAMESPACE} new-app ${S2I_IMAGE}~${GIT_REPO} --name=${NAME}
+                                oc -n ${TARGET_NAMESPACE} env --from=secret/sc-routes dc/sc-routes
+                                oc -n ${TARGET_NAMESPACE} logs -f bc/${NAME}
+                            fi
+                            echo " 🏗 build found - starting it  🏗"
+                            oc -n ${TARGET_NAMESPACE} start-build ${NAME} --follow
+                            '''
+                        }
                     }
                 }
-                steps {
-                    script {
-                        sh '''
-                        oc -n ${TARGET_NAMESPACE} get bc ${NAME}-build || rc=$?
-                        if [ $rc -eq 1 ]; then
-                            echo " 🏗 no app build - creating one, make sure secret ${NAME} exists first 🏗"
-                            oc -n ${TARGET_NAMESPACE} new-app ${S2I_IMAGE}~${GIT_REPO} --name=${NAME}
-                            oc -n ${TARGET_NAMESPACE} env --from=secret/sc-routes dc/sc-routes
-                            oc -n ${TARGET_NAMESPACE} logs -f bc/${NAME}
-                        fi
-                        echo " 🏗 build found - starting it  🏗"
-                        oc -n ${TARGET_NAMESPACE} start-build ${NAME} --follow
-                        '''
+                stage("Infinispan") {
+                    agent {
+                        node {
+                            label "master"
+                        }
                     }
-                }
-            }
-            stage("Infinispan") {
-                agent {
-                    node {
-                        label "master"
-                    }
-                }
-                steps {
-                    script {
-                        sh '''
-                        oc -n ${TARGET_NAMESPACE} get oc get Subscription infinispan || rc=$?
-                        if [ $rc -eq 1 ]; then
-                            echo " 🏗 no infinispan cluster - creating 🏗"
-                            oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-subscription.yaml
-                            oc -n ${TARGET_NAMESPACE} wait pod -l name=infinispan-operator-alm-owned --for=condition=Ready --timeout=300s
-                            oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-cr.yaml
-                            oc -n ${TARGET_NAMESPACE} wait pod -l app=infinispan-pod --for=condition=Ready --timeout=300s
-                        fi
-                        echo " 🏗 found infinispan cluster - skipping  🏗"                            
-                        '''
+                    steps {
+                        script {
+                            sh '''
+                            oc -n ${TARGET_NAMESPACE} get oc get Subscription infinispan || rc=$?
+                            if [ $rc -eq 1 ]; then
+                                echo " 🏗 no infinispan cluster - creating 🏗"
+                                oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-subscription.yaml
+                                oc -n ${TARGET_NAMESPACE} wait pod -l name=infinispan-operator-alm-owned --for=condition=Ready --timeout=300s
+                                oc -n ${TARGET_NAMESPACE} apply -f ocp/infinispan-cr.yaml
+                                oc -n ${TARGET_NAMESPACE} wait pod -l app=infinispan-pod --for=condition=Ready --timeout=300s
+                            fi
+                            echo " 🏗 found infinispan cluster - skipping  🏗"                            
+                            '''
+                        }
                     }
                 }
             }
