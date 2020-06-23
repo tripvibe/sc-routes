@@ -14,7 +14,7 @@ pipeline {
         IMAGE_REPOSITORY= 'image-registry.openshift-image-registry.svc:5000'
 
         GIT_REPO = "https://github.com/eformat/sc-routes.git#${GIT_BRANCH}"
-        S2I_IMAGE = 'quay.io/quarkus/ubi-quarkus-native-s2i:20.1.0-java11'
+        S2I_IMAGE = 'quay.io/quarkus/ubi-quarkus-native-s2i:20.0.0-java11'
         GIT_SSL_NO_VERIFY = true
 
         // Credentials bound in OpenShift
@@ -106,11 +106,13 @@ pipeline {
                                 oc -n ${TARGET_NAMESPACE} new-app --as-deployment-config ${S2I_IMAGE}~${GIT_REPO} --name=${NAME}
                                 oc -n ${TARGET_NAMESPACE} patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                                 oc -n ${TARGET_NAMESPACE} set env --from=secret/sc-routes dc/sc-routes
+                                sleep 10
                                 oc -n ${TARGET_NAMESPACE} logs -f bc/${NAME}
+                            else
+                                echo " 🏗 build found - starting it  🏗"
+                                oc -n ${TARGET_NAMESPACE} start-build ${NAME} --follow
+                                oc -n ${TARGET_NAMESPACE} expose svc/${NAME}
                             fi
-                            echo " 🏗 build found - starting it  🏗"
-                            oc -n ${TARGET_NAMESPACE} start-build ${NAME} --follow
-                            oc -n ${TARGET_NAMESPACE} expose svc/${NAME}
                             '''
                         }
                     }
