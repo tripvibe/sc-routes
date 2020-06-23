@@ -8,6 +8,7 @@ import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
+import io.vertx.ext.web.Route;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.infinispan.client.hotrod.DefaultTemplate;
@@ -93,6 +94,13 @@ public class RoutesResource {
         ).collectItems().asList();
     }
 
+    private Uni<List<Multi<List<RouteDAO>>>> departMultiDAO(String latlong, String distance) {
+        return Multi.createBy().merging().streams(
+                Multi.createFrom().iterable(stopsMulti(latlong, distance).collectItems().asList().await().indefinitely()).map(
+                        x -> Multi.createFrom().item(_departuresDao(new JSONObject(x))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()))
+        ).collectItems().asList();
+    }
+
     @GET
     @Path("/routes/{latlong}/{distance}")
     @Produces(MediaType.SERVER_SENT_EVENTS)
@@ -111,8 +119,8 @@ public class RoutesResource {
     @GET
     @Path("/search/routes/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Publisher<String> oneShot(@PathParam String latlong, @PathParam String distance) {
-        return departMulti(latlong, distance).await().indefinitely().iterator().next();
+    public Multi<List<RouteDAO>> oneShot(@PathParam String latlong, @PathParam String distance) {
+        return departMultiDAO(latlong, distance).await().indefinitely().iterator().next();
     }
 
     @GET
@@ -154,6 +162,93 @@ public class RoutesResource {
     @Path("/clearcache")
     public void cleanCache() {
         cleanupCaches(routesCache);
+    }
+
+    private List<RouteDAO> _departuresDao(JSONObject obj) {
+        // get departures based on geoloc
+        JSONArray stops = obj.getJSONArray("stops");
+
+        // no results
+        if (stops.length() == 0) {
+            log.info("::_departures passed zero length stops returning");
+            return new ArrayList();
+        }
+
+        Map<String, String> _sd = new ConcurrentHashMap<String, String>();
+        Map<String, String> _sn = new ConcurrentHashMap<String, String>();
+        for (int i = 0; i < stops.length(); i++) {
+            JSONObject _stop = stops.getJSONObject(i);
+            _sd.put(_stop.optString("stop_id"), _stop.optString("route_type"));
+            _sn.put(_stop.optString("stop_id"), _stop.optString("stop_name"));
+        }
+
+        List<RouteDAO> rList = new ArrayList<RouteDAO>();
+        Map<String, String> duplicates = new ConcurrentHashMap<String, String>();
+
+        log.info("Cache contains " + routesCache.size() + " items ");
+
+        _sd.forEach((k, v) -> {
+                    final String route_type = v;
+                    final String stop_id = k;
+                    // Service call for departures
+                    String departures = departuresService.departures(route_type, stop_id, devid, signature.generate("/v3/departures/route_type/" + route_type + "/stop/" + stop_id));
+
+                    // we only want unique route and direction
+                    JSONObject d = new JSONObject(departures);
+                    JSONArray deps = d.getJSONArray("departures");
+                    Map<String, String> _rd = new ConcurrentHashMap<String, String>();
+                    for (int i = 0; i < deps.length(); i++) {
+                        JSONObject _deps = deps.getJSONObject(i);
+                        _rd.put(_deps.optString("route_id"), _deps.optString("direction_id"));
+                    }
+                    log.debug("::_departures found " + _rd.size() + " processing...");
+
+                    // RouteType
+                    final String rT = routeTypes(route_type);
+
+                    // Populate return list using cache if it exists
+                    _rd.forEach((key, val) -> {
+                        try {
+                            JSONObject ret = new JSONObject();
+                            if (routesCache.containsKey(Integer.valueOf(key))) {
+                                log.debug("Reading " + key + " from cache...");
+                                RouteDAO routeDAO = routesCache.get(Integer.valueOf(key));
+                                String routeName = routeDAO.getName();
+                                String routeNumber = routeDAO.getNumber();
+                                if (!duplicates.containsKey(routeName)) {
+                                    ret.put("Type", routeDAO.getType());
+                                    ret.put("Name", routeDAO.getName());
+                                    ret.put("Number", routeDAO.getNumber());
+                                    ret.put("Direction", routeDAO.getDirection());
+                                    ret.put("StopName", routeDAO.getStopName());
+                                    rList.add(routeDAO);
+                                }
+                                duplicates.put(routeName, routeNumber);
+                            } else {
+                                String routeName = routeNameNumber(key, "route_name");
+                                String routeNumber = routeNameNumber(key, "route_number");
+                                if (!duplicates.containsKey(routeName)) {
+                                    String routeDirection = directionName(key, val);
+                                    ret.put("Type", rT);
+                                    ret.put("Name", routeName);
+                                    ret.put("Number", routeNumber);
+                                    ret.put("Direction", routeDirection);
+                                    ret.put("StopName", _sn.get(k));
+                                    RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k));
+                                    rList.add(_r);
+                                    routesCache.put(Integer.valueOf(key), _r);
+                                }
+                                duplicates.put(routeName, routeNumber);
+                            }
+                        } catch (org.json.JSONException ex) {
+                            log.error("JSON Parse error." + ex);
+                        }
+                    });
+                }
+        );
+
+        log.info("Found " + rList.size() + " departure routes nearby ...");
+        return rList;
     }
 
     private String _departures(JSONObject obj) {
@@ -227,7 +322,8 @@ public class RoutesResource {
                                     ret.put("Direction", routeDirection);
                                     ret.put("StopName", _sn.get(k));
                                     jList.add(ret);
-                                    routesCache.put(Integer.valueOf(key), new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k)));
+                                    RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k));
+                                    routesCache.put(Integer.valueOf(key), _r);
                                 }
                                 duplicates.put(routeName, routeNumber);
                             }
