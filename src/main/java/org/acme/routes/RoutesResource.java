@@ -88,18 +88,12 @@ public class RoutesResource {
         return Multi.createFrom().item(stopsService.routes(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
     }
 
-    private Uni<List<Multi<List<RouteDAO>>>> departMulti(String latlong, String distance) {
-        return Multi.createBy().merging().streams(
-                Multi.createFrom().iterable(stopsMulti(latlong, distance).collectItems().asList().await().indefinitely()).map(
-                        x -> Multi.createFrom().item(_departures(new JSONObject(x))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()))
-        ).collectItems().asList();
-    }
-
-    private Uni<List<Multi<List<RouteDAO>>>> departMultiDAO(String latlong, String distance) {
-        return Multi.createBy().merging().streams(
-                Multi.createFrom().iterable(stopsMulti(latlong, distance).collectItems().asList().await().indefinitely()).map(
-                        x -> Multi.createFrom().item(_departures(new JSONObject(x))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool()))
-        ).collectItems().asList();
+    private Multi<List<RouteDAO>> departMulti(String latlong, String distance) {
+        return Multi.createFrom().iterable(
+                stopsMulti(latlong, distance).collectItems().asList().await().indefinitely()
+        ).map(
+                x -> _departures(new JSONObject(x))
+        ).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
     }
 
     @GET
@@ -113,15 +107,15 @@ public class RoutesResource {
                 .onFailure().invoke(failure -> log.warn("Failed with " + failure.getMessage()))
                 .onCompletion().invoke(() -> log.info("Completed"))
                 .onItem().produceMulti(
-                        x -> departMulti(latlong, distance).await().indefinitely().iterator().next()
+                        x -> departMulti(latlong, distance)
                 ).merge();
     }
 
     @GET
     @Path("/search/routes/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Multi<List<RouteDAO>> oneShot(@PathParam String latlong, @PathParam String distance) {
-        return departMultiDAO(latlong, distance).await().indefinitely().iterator().next();
+    public List<RouteDAO> oneShot(@PathParam String latlong, @PathParam String distance) {
+        return departMulti(latlong, distance).collectItems().first().await().indefinitely();
     }
 
     @GET
@@ -231,7 +225,7 @@ public class RoutesResource {
                             } else {
                                 String routeName = routeNameNumber(key, "route_name");
                                 String routeNumber = routeNameNumber(key, "route_number");
-                                Integer capacity =  getCapcaity();
+                                Integer capacity = getCapcaity();
                                 Integer vibe = getVibe();
                                 String departureTime = getDepartureTime();
                                 if (!duplicates.containsKey(routeName)) {
@@ -316,9 +310,11 @@ public class RoutesResource {
     private Integer getCapcaity() {
         return new Random().nextInt(100) + 1;
     }
+
     private Integer getVibe() {
         return new Random().nextInt(100) + 1;
     }
+
     private String getDepartureTime() {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
