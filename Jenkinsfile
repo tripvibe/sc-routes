@@ -175,7 +175,7 @@ pipeline {
                        fi
                        echo " 🏗 found pod waiting for deployment 🏗"                       
                        oc -n ${TARGET_NAMESPACE} wait dc -l app=sc-routes --for=condition=Available --timeout=300s
-                       oc expose svc/${NAME}
+                       oc -n ${TARGET_NAMESPACE} expose svc/${NAME}
                     '''
                 }
             }
