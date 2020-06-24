@@ -166,16 +166,20 @@ pipeline {
             steps {
                 script {
                     sh '''
-                       oc tag ${NAME}:latest ${TARGET_NAMESPACE}/${NAME}:latest
-                       oc -n ${TARGET_NAMESPACE} get dc ${NAME} || rc=$?
-                       if [ $rc -eq 1 ]; then
-                            echo " 🏗 no deployment found - creating 🏗"
-                            oc -n ${TARGET_NAMESPACE} new-app ${NAME} --as-deployment-config
-                            oc -n ${TARGET_NAMESPACE} set env --from=secret/sc-routes dc/sc-routes                            
-                       fi
-                       echo " 🏗 found pod waiting for deployment 🏗"                       
-                       oc -n ${TARGET_NAMESPACE} wait dc -l app=sc-routes --for=condition=Available --timeout=300s
-                       oc -n ${TARGET_NAMESPACE} expose svc/${NAME}
+                       #oc tag ${NAME}:latest ${TARGET_NAMESPACE}/${NAME}:latest
+                       #oc -n ${TARGET_NAMESPACE} get dc ${NAME} || rc=$?
+                       #if [ $rc -eq 1 ]; then
+                       #     echo " 🏗 no deployment found - creating 🏗"
+                       #     oc -n ${TARGET_NAMESPACE} new-app ${NAME} --as-deployment-config
+                       #     oc -n ${TARGET_NAMESPACE} set env --from=secret/sc-routes dc/sc-routes                            
+                       #fi
+                       #echo " 🏗 found pod waiting for deployment 🏗"                       
+                       #oc -n ${TARGET_NAMESPACE} wait dc -l app=sc-routes --for=condition=Available --timeout=300s
+                       # 
+                       #oc -n ${TARGET_NAMESPACE} get route ${NAME} || rc=$?
+                       #if [ $rc -eq 1 ]; then
+                       #    oc -n ${TARGET_NAMESPACE} expose svc/${NAME}
+                       #fi
                     '''
                 }
             }
