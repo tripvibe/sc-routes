@@ -319,7 +319,7 @@ public class RoutesResource {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         long now = new Date().getTime();
-        long minutes = new Random().nextInt(10) +1;
+        long minutes = (new Random().nextInt(10) + 1)*60000;
         Date date = new Date(now + minutes);
         return df.format(date);
     }
