@@ -166,7 +166,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                       oc tag ${APP}:latest ${TARGET_NAMESPACE}/${APP_NAME}:latest
+                       oc tag ${NAME}:latest ${TARGET_NAMESPACE}/${NAME}:latest
                        oc -n ${TARGET_NAMESPACE} get dc ${NAME} || rc=$?
                        if [ $rc -eq 1 ]; then
                             echo " 🏗 no deployment found - creating 🏗"
