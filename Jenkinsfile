@@ -14,7 +14,7 @@ pipeline {
         IMAGE_REPOSITORY= 'image-registry.openshift-image-registry.svc:5000'
 
         GIT_REPO = "https://github.com/eformat/sc-routes.git#${GIT_BRANCH}"
-        S2I_IMAGE = 'quay.io/quarkus/ubi-quarkus-native-s2i:20.0.0-java11'
+        S2I_IMAGE = 'quay.io/quarkus/ubi-quarkus-native-s2i:20.1.0-java11'
         GIT_SSL_NO_VERIFY = true
 
         // Credentials bound in OpenShift
