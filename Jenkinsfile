@@ -89,7 +89,7 @@ pipeline {
             }
         }
 
-        stage("Build and Deploy") {
+        stage("Build") {
             parallel {
                 stage("Build App") {
                     agent {
@@ -100,7 +100,7 @@ pipeline {
                     steps {
                         script {
                             env.VERSION = readMavenPom().getVersion()
-                            env.PACKAGE = "${NAME}-${VERSION}.tar.gz"
+                            env.PACKAGE = "${NAME}-${VERSION}-runner.tar.gz"
                             env.JAVA_HOME = "/usr/lib/jvm/java-11-openjdk"
                         }
 
@@ -123,7 +123,7 @@ pipeline {
                                 oc apply -f /tmp/bc.yaml
                                 oc patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                             fi
-                            echo " 🏗 build found - starting it  🏗"    
+                            echo " 🏗 build found - starting it  🏗"
                             oc start-build ${NAME} --from-archive=target/${PACKAGE} --follow
                             oc expose svc/${NAME}                            
                             '''
@@ -154,6 +154,20 @@ pipeline {
                             '''
                         }
                     }
+                }
+            }
+        }
+
+        stage ("Deploy") {
+            agent {
+                node {
+                    label "master"
+                }
+            }
+            steps {
+                script {
+                    sh '''
+                    '''
                 }
             }
         }
