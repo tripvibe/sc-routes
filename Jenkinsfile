@@ -94,25 +94,38 @@ pipeline {
                 stage("Build App") {
                     agent {
                         node {
-                            label "master"
+                            label "jenkins-slave-mvn"
                         }
                     }
                     steps {
                         script {
-                            sh '''
-                            oc -n ${TARGET_NAMESPACE} get bc ${NAME} || rc=$?
+                            env.VERSION = readMavenPom().getVersion()
+                            env.PACKAGE = "${NAME}-${VERSION}.tar.gz"
+                            env.JAVA_HOME = "/usr/lib/jvm/java-11-openjdk"
+                        }
+
+                        script {
+                            echo '### Running checkstyle ###'
+                            // sh 'mvn checkstyle:check'
+
+                            echo '### Running tests ###'
+                            // sh 'mvn test'
+
+                            echo '### Running build ###'
+                            sh '''                            
+                            mvn package -DskipTests -s ocp/settings.xml
+                            
+                            oc get bc ${NAME} || rc=$?
                             if [ $rc -eq 1 ]; then
-                                echo " 🏗 no app build - creating one, make sure secret ${NAME} exists first 🏗"
-                                oc -n ${TARGET_NAMESPACE} new-app --as-deployment-config ${S2I_IMAGE}~${GIT_REPO} --name=${NAME}
-                                oc -n ${TARGET_NAMESPACE} patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
-                                oc -n ${TARGET_NAMESPACE} set env --from=secret/sc-routes dc/sc-routes
-                                sleep 10
-                                oc -n ${TARGET_NAMESPACE} logs -f bc/${NAME}
-                            else
-                                echo " 🏗 build found - starting it  🏗"
-                                oc -n ${TARGET_NAMESPACE} start-build ${NAME} --follow
-                                oc -n ${TARGET_NAMESPACE} expose svc/${NAME}
+                                echo " 🏗 no build - creating one 🏗"
+                                oc new-build --binary --name=${APP_NAME} -l app=${APP_NAME} --strategy=docker --dry-run -o yaml > /tmp/bc.yaml
+                                yq w -i /tmp/bc.yaml items[1].spec.strategy.dockerStrategy.dockerfilePath Dockerfile.jvm
+                                oc apply -f /tmp/bc.yaml
+                                oc patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                             fi
+                            echo " 🏗 build found - starting it  🏗"    
+                            oc start-build ${NAME} --from-archive=${PACKAGE} --follow
+                            oc expose svc/${NAME}                            
                             '''
                         }
                     }
