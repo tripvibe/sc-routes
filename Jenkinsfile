@@ -166,15 +166,16 @@ pipeline {
             steps {
                 script {
                     sh '''
+                       oc tag ${APP}:latest ${TARGET_NAMESPACE}/${APP_NAME}:latest
                        oc -n ${TARGET_NAMESPACE} get dc ${NAME} || rc=$?
                        if [ $rc -eq 1 ]; then
                             echo " 🏗 no deployment found - creating 🏗"
-                            #oc -n ${TARGET_NAMESPACE} new-app --as-deployment-config --name=sc-routes
-
-                            #oc -n ${TARGET_NAMESPACE} wait pod -l app=infinispan-pod --for=condition=Ready --timeout=300s
+                            oc -n ${TARGET_NAMESPACE} new-app ${NAME} --as-deployment-config
+                            oc -n ${TARGET_NAMESPACE} set env --from=secret/sc-routes dc/sc-routes                            
                        fi
-                       
-                       #oc expose svc/${NAME}
+                       echo " 🏗 found pod waiting for deployment 🏗"                       
+                       oc -n ${TARGET_NAMESPACE} wait dc -l app=sc-routes --for=condition=Ready --timeout=300s
+                       oc expose svc/${NAME}
                     '''
                 }
             }
