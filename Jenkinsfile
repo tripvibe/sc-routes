@@ -124,7 +124,7 @@ pipeline {
                                 oc patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                             fi
                             echo " 🏗 build found - starting it  🏗"
-                            oc start-build ${NAME} --from-archive=target/${PACKAGE} --follow                                                        
+                            oc start-build ${NAME} --from-dir=. --follow                                                        
                             '''
                         }
                     }
@@ -166,8 +166,13 @@ pipeline {
             steps {
                 script {
                     sh '''
-                       #oc -n ${TARGET_NAMESPACE} get dc ${NAME} || rc=$?
-                       
+                       oc -n ${TARGET_NAMESPACE} get dc ${NAME} || rc=$?
+                       if [ $rc -eq 1 ]; then
+                            echo " 🏗 no deployment found - creating 🏗"
+                            #oc -n ${TARGET_NAMESPACE} new-app --as-deployment-config --name=sc-routes
+
+                            #oc -n ${TARGET_NAMESPACE} wait pod -l app=infinispan-pod --for=condition=Ready --timeout=300s
+                       fi
                        
                        #oc expose svc/${NAME}
                     '''
