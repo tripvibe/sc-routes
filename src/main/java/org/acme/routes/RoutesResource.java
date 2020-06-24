@@ -240,7 +240,7 @@ public class RoutesResource {
                                     ret.put("DepartureTime", departureTime);
                                     RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, departureTime);
                                     rList.add(_r);
-                                    routesCache.put(Integer.valueOf(key), _r, 300, TimeUnit.SECONDS);
+                                    //routesCache.put(Integer.valueOf(key), _r, 300, TimeUnit.SECONDS);
                                 }
                                 duplicates.put(routeName, routeNumber);
                             }
