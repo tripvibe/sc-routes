@@ -18,7 +18,7 @@ podman-build-nocompile:
 
 # Build the oci image
 podman-build: compile
-	podman build . -t ${IMG} -f Dockerfile.native
+	podman build --no-cache . -t ${IMG} -f Dockerfile.native
 
 # Push the oci image
 podman-push: podman-build

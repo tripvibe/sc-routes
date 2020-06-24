@@ -6,12 +6,15 @@ import org.infinispan.protostream.annotations.ProtoField;
 public class RouteDAO {
 
     @ProtoFactory
-    public RouteDAO(String type, String name, String number, String direction, String stopName) {
+    public RouteDAO(String type, String name, String number, String direction, String stopName, Integer capacity, Integer vibe, String departureTime) {
         this.type = type;
         this.name = name;
         this.number = number;
         this.direction = direction;
         this.stopName = stopName;
+        this.capacity = capacity;
+        this.vibe = vibe;
+        this.departureTime = departureTime;
     }
 
     private String type;
@@ -19,6 +22,9 @@ public class RouteDAO {
     private String number;
     private String direction;
     private String stopName;
+    private Integer capacity;
+    private Integer vibe;
+    private String departureTime;
 
     @ProtoField(number = 1)
     public String getType() {
@@ -52,6 +58,10 @@ public class RouteDAO {
         return direction;
     }
 
+    public void setDirection(String direction) {
+        this.direction = direction;
+    }
+
     @ProtoField(number = 5)
     public String getStopName() {
         return stopName;
@@ -61,7 +71,30 @@ public class RouteDAO {
         this.stopName = stopName;
     }
 
-    public void setDirection(String direction) {
-        this.direction = direction;
+    @ProtoField(number = 6)
+    public Integer getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(Integer capacity) {
+        this.capacity = capacity;
+    }
+
+    @ProtoField(number = 7)
+    public Integer getVibe() {
+        return vibe;
+    }
+
+    public void setVibe(Integer vibe) {
+        this.vibe = vibe;
+    }
+
+    @ProtoField(number = 8)
+    public String getDepartureTime() {
+        return departureTime;
+    }
+
+    public void setDepartureTime(String departureTime) {
+        this.departureTime = departureTime;
     }
 }

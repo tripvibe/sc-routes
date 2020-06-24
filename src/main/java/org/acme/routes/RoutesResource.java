@@ -30,10 +30,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -220,12 +222,18 @@ public class RoutesResource {
                                     ret.put("Number", routeDAO.getNumber());
                                     ret.put("Direction", routeDAO.getDirection());
                                     ret.put("StopName", routeDAO.getStopName());
+                                    ret.put("Capacity", routeDAO.getCapacity());
+                                    ret.put("Vibe", routeDAO.getVibe());
+                                    ret.put("DepartureTime", routeDAO.getDepartureTime());
                                     rList.add(routeDAO);
                                 }
                                 duplicates.put(routeName, routeNumber);
                             } else {
                                 String routeName = routeNameNumber(key, "route_name");
                                 String routeNumber = routeNameNumber(key, "route_number");
+                                Integer capacity =  getCapcaity();
+                                Integer vibe = getVibe();
+                                String departureTime = getDepartureTime();
                                 if (!duplicates.containsKey(routeName)) {
                                     String routeDirection = directionName(key, val);
                                     ret.put("Type", rT);
@@ -233,7 +241,10 @@ public class RoutesResource {
                                     ret.put("Number", routeNumber);
                                     ret.put("Direction", routeDirection);
                                     ret.put("StopName", _sn.get(k));
-                                    RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k));
+                                    ret.put("Capacity", capacity);
+                                    ret.put("Vibe", vibe);
+                                    ret.put("DepartureTime", departureTime);
+                                    RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, departureTime);
                                     rList.add(_r);
                                     routesCache.put(Integer.valueOf(key), _r);
                                 }
@@ -296,6 +307,23 @@ public class RoutesResource {
         } catch (Exception e) {
             log.error("Something went wrong clearing data stores." + e);
         }
+    }
+
+
+    /*
+      The methods are FAKE/MOCK for now
+     */
+    private Integer getCapcaity() {
+        return new Random().nextInt(100) + 1;
+    }
+    private Integer getVibe() {
+        return new Random().nextInt(100) + 1;
+    }
+    private String getDepartureTime() {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Date date = new Date();
+        return df.format(date);
     }
 
 }
