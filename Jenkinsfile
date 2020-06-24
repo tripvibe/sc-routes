@@ -100,7 +100,7 @@ pipeline {
                     steps {
                         script {
                             env.VERSION = readMavenPom().getVersion()
-                            env.PACKAGE = "${NAME}-${VERSION}-runner.tar.gz"
+                            env.PACKAGE = "${NAME}-${VERSION}-runner.jar"
                             env.JAVA_HOME = "/usr/lib/jvm/java-11-openjdk"
                         }
 
@@ -124,8 +124,7 @@ pipeline {
                                 oc patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                             fi
                             echo " 🏗 build found - starting it  🏗"
-                            oc start-build ${NAME} --from-archive=target/${PACKAGE} --follow
-                            oc expose svc/${NAME}                            
+                            oc start-build ${NAME} --from-archive=target/${PACKAGE} --follow                                                        
                             '''
                         }
                     }
@@ -167,6 +166,10 @@ pipeline {
             steps {
                 script {
                     sh '''
+                       #oc -n ${TARGET_NAMESPACE} get dc ${NAME} || rc=$?
+                       
+                       
+                       #oc expose svc/${NAME}
                     '''
                 }
             }
