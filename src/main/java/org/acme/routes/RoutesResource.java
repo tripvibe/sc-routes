@@ -240,7 +240,7 @@ public class RoutesResource {
                                     ret.put("DepartureTime", departureTime);
                                     RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, departureTime);
                                     rList.add(_r);
-                                    //routesCache.put(Integer.valueOf(key), _r, 300, TimeUnit.SECONDS);
+                                    routesCache.put(Integer.valueOf(key), _r, 300, TimeUnit.SECONDS);
                                 }
                                 duplicates.put(routeName, routeNumber);
                             }
@@ -318,7 +318,9 @@ public class RoutesResource {
     private String getDepartureTime() {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
-        Date date = new Date();
+        long now = new Date().getTime();
+        long minutes = new Random().nextInt(10) +1;
+        Date date = new Date(now + minutes);
         return df.format(date);
     }
 
