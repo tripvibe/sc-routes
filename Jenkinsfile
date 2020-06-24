@@ -124,7 +124,7 @@ pipeline {
                                 oc patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                             fi
                             echo " 🏗 build found - starting it  🏗"    
-                            oc start-build ${NAME} --from-archive=${PACKAGE} --follow
+                            oc start-build ${NAME} --from-archive=target/${PACKAGE} --follow
                             oc expose svc/${NAME}                            
                             '''
                         }
