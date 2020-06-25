@@ -121,7 +121,7 @@ pipeline {
                                 oc new-build --binary --name=${APP_NAME} -l app=${APP_NAME} --strategy=docker --dry-run -o yaml > /tmp/bc.yaml
                                 yq w -i /tmp/bc.yaml items[1].spec.strategy.dockerStrategy.dockerfilePath Dockerfile.jvm
                                 oc apply -f /tmp/bc.yaml
-                                oc patch bc/sc-routes -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
+                                oc patch bc/${NAME} -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                             fi
                             echo " 🏗 build found - starting it  🏗"
                             oc start-build ${NAME} --from-dir=. --follow                                                        
@@ -171,7 +171,7 @@ pipeline {
                        #if [ $rc -eq 1 ]; then
                        #     echo " 🏗 no deployment found - creating 🏗"
                        #     oc -n ${TARGET_NAMESPACE} new-app ${NAME} --as-deployment-config
-                       #     oc -n ${TARGET_NAMESPACE} set env --from=secret/sc-routes dc/sc-routes                            
+                       #     oc -n ${TARGET_NAMESPACE} set env --from=secret/${NAME} dc/${NAME}                            
                        #fi
                        #echo " 🏗 found pod waiting for deployment 🏗"                       
                        #oc -n ${TARGET_NAMESPACE} wait dc -l deploymentconfig=${NAME} --for=condition=Available --timeout=300s
