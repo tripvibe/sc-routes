@@ -204,21 +204,13 @@ public class RoutesResource {
                     // Populate return list using cache if it exists
                     _rd.forEach((key, val) -> {
                         try {
-                            JSONObject ret = new JSONObject();
                             if (routesCache.containsKey(Integer.valueOf(key))) {
                                 log.debug("Reading " + key + " from cache...");
                                 RouteDAO routeDAO = routesCache.get(Integer.valueOf(key));
                                 String routeName = routeDAO.getName();
                                 String routeNumber = routeDAO.getNumber();
                                 if (!duplicates.containsKey(routeName)) {
-                                    ret.put("Type", routeDAO.getType());
-                                    ret.put("Name", routeDAO.getName());
-                                    ret.put("Number", routeDAO.getNumber());
-                                    ret.put("Direction", routeDAO.getDirection());
-                                    ret.put("StopName", routeDAO.getStopName());
-                                    ret.put("Capacity", routeDAO.getCapacity());
-                                    ret.put("Vibe", routeDAO.getVibe());
-                                    ret.put("DepartureTime", getDepartureTime()); // always update for mock
+                                    routeDAO.setDepartureTime(getDepartureTime()); // always update for mock
                                     rList.add(routeDAO);
                                 }
                                 duplicates.put(routeName, routeNumber);
@@ -230,14 +222,6 @@ public class RoutesResource {
                                 String departureTime = getDepartureTime();
                                 if (!duplicates.containsKey(routeName)) {
                                     String routeDirection = directionName(key, val);
-                                    ret.put("Type", rT);
-                                    ret.put("Name", routeName);
-                                    ret.put("Number", routeNumber);
-                                    ret.put("Direction", routeDirection);
-                                    ret.put("StopName", _sn.get(k));
-                                    ret.put("Capacity", capacity);
-                                    ret.put("Vibe", vibe);
-                                    ret.put("DepartureTime", departureTime);
                                     RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, departureTime);
                                     rList.add(_r);
                                     routesCache.put(Integer.valueOf(key), _r); // , 3600, TimeUnit.SECONDS
