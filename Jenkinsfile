@@ -174,11 +174,12 @@ pipeline {
                        #     oc -n ${TARGET_NAMESPACE} set env --from=secret/sc-routes dc/sc-routes                            
                        #fi
                        #echo " 🏗 found pod waiting for deployment 🏗"                       
-                       #oc -n ${TARGET_NAMESPACE} wait dc -l app=sc-routes --for=condition=Available --timeout=300s
+                       #oc -n ${TARGET_NAMESPACE} wait dc -l deploymentconfig=${NAME} --for=condition=Available --timeout=300s
                        # 
                        #oc -n ${TARGET_NAMESPACE} get route ${NAME} || rc=$?
                        #if [ $rc -eq 1 ]; then
                        #    oc -n ${TARGET_NAMESPACE} expose svc/${NAME}
+                       #    oc patch route/${NAME} --type=json -p '[{"op":"add", "path":"/spec/tls", "value":{"termination":"edge","insecureEdgeTerminationPolicy":"Redirect"}}]'
                        #fi
                     '''
                 }
