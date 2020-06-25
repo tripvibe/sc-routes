@@ -174,7 +174,7 @@ pipeline {
                        #     oc -n ${TARGET_NAMESPACE} set env --from=secret/${NAME} dc/${NAME}                            
                        #fi
                        #echo " 🏗 found pod waiting for deployment 🏗"                       
-                       #oc -n ${TARGET_NAMESPACE} wait dc -l deploymentconfig=${NAME} --for=condition=Available --timeout=300s
+                       #oc -n ${TARGET_NAMESPACE} wait dc -l app=${NAME} --for=condition=Available --timeout=300s
                        # 
                        #oc -n ${TARGET_NAMESPACE} get route ${NAME} || rc=$?
                        #if [ $rc -eq 1 ]; then
