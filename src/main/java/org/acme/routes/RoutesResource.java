@@ -218,7 +218,7 @@ public class RoutesResource {
                                     ret.put("StopName", routeDAO.getStopName());
                                     ret.put("Capacity", routeDAO.getCapacity());
                                     ret.put("Vibe", routeDAO.getVibe());
-                                    ret.put("DepartureTime", routeDAO.getDepartureTime());
+                                    ret.put("DepartureTime", getDepartureTime()); // always update for mock
                                     rList.add(routeDAO);
                                 }
                                 duplicates.put(routeName, routeNumber);
@@ -240,7 +240,7 @@ public class RoutesResource {
                                     ret.put("DepartureTime", departureTime);
                                     RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, departureTime);
                                     rList.add(_r);
-                                    routesCache.put(Integer.valueOf(key), _r, 600, TimeUnit.SECONDS);
+                                    routesCache.put(Integer.valueOf(key), _r); // , 3600, TimeUnit.SECONDS
                                 }
                                 duplicates.put(routeName, routeNumber);
                             }
