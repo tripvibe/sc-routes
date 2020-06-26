@@ -1,5 +1,6 @@
 package org.acme.routes;
 
+import com.acme.dao.CacheKey;
 import com.acme.dao.RouteDAO;
 import com.acme.rest.*;
 import com.acme.util.Signature;
@@ -30,11 +31,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -76,11 +74,11 @@ public class RoutesResource {
 
     @Inject
     @Remote("routes")
-    RemoteCache<Integer, RouteDAO> routesCache;
+    RemoteCache<CacheKey, RouteDAO> routesCache;
 
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         log.info("On start - clean and load data");
-        RemoteCache<Integer, RouteDAO> routes = cacheManager.administration().getOrCreateCache("routes", DefaultTemplate.REPL_ASYNC);
+        RemoteCache<CacheKey, RouteDAO> routes = cacheManager.administration().getOrCreateCache("routes", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 
@@ -204,9 +202,10 @@ public class RoutesResource {
                     // Populate return list using cache if it exists
                     _rd.forEach((key, val) -> {
                         try {
-                            if (routesCache.containsKey(Integer.valueOf(key))) {
+                            CacheKey _key = new CacheKey(k,v);
+                            if (routesCache.containsKey(_key)) {
                                 log.debug("Reading " + key + " from cache...");
-                                RouteDAO routeDAO = routesCache.get(Integer.valueOf(key));
+                                RouteDAO routeDAO = routesCache.get(_key);
                                 String routeName = routeDAO.getName();
                                 String routeNumber = routeDAO.getNumber();
                                 if (!duplicates.containsKey(routeName)) {
@@ -224,7 +223,7 @@ public class RoutesResource {
                                     String routeDirection = directionName(key, val);
                                     RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, departureTime);
                                     rList.add(_r);
-                                    routesCache.put(Integer.valueOf(key), _r); // , 3600, TimeUnit.SECONDS
+                                    routesCache.put(_key, _r); // , 3600, TimeUnit.SECONDS
                                 }
                                 duplicates.put(routeName, routeNumber);
                             }
@@ -278,7 +277,7 @@ public class RoutesResource {
         return _rt.get(direction_id);
     }
 
-    private void cleanupCaches(RemoteCache<Integer, RouteDAO> routes) {
+    private void cleanupCaches(RemoteCache<CacheKey, RouteDAO> routes) {
         try {
             Uni.createFrom().item(routes.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
