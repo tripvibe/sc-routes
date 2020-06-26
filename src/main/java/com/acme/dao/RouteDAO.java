@@ -5,6 +5,20 @@ import org.infinispan.protostream.annotations.ProtoField;
 
 public class RouteDAO {
 
+    @Override
+    public String toString() {
+        return "RouteDAO{" +
+                "type='" + type + '\'' +
+                ", name='" + name + '\'' +
+                ", number='" + number + '\'' +
+                ", direction='" + direction + '\'' +
+                ", stopName='" + stopName + '\'' +
+                ", capacity=" + capacity +
+                ", vibe=" + vibe +
+                ", departureTime='" + departureTime + '\'' +
+                '}';
+    }
+
     @ProtoFactory
     public RouteDAO(String type, String name, String number, String direction, String stopName, Integer capacity, Integer vibe, String departureTime) {
         this.type = type;

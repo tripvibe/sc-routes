@@ -48,4 +48,12 @@ public class CacheKey implements Serializable {
     public int hashCode() {
         return Objects.hash(route_id, direction_id);
     }
+
+    @Override
+    public String toString() {
+        return "CacheKey{" +
+                "route_id='" + route_id + '\'' +
+                ", direction_id='" + direction_id + '\'' +
+                '}';
+    }
 }

@@ -1,6 +1,7 @@
 package org.acme.routes;
 
 import com.acme.dao.CacheKey;
+import com.acme.dao.Departure;
 import com.acme.dao.RouteDAO;
 import com.acme.rest.*;
 import com.acme.util.Signature;
@@ -176,55 +177,58 @@ public class RoutesResource {
         }
 
         List<RouteDAO> rList = new ArrayList<RouteDAO>();
+        HashSet<Departure> dhs = new HashSet<>();
+        HashSet<CacheKey> cks = new HashSet<>();
 
         log.info("Cache contains " + routesCache.size() + " items ");
 
         _sd.forEach((k, v) -> {
                     final String route_type = v;
                     final String stop_id = k;
+
                     // Service call for departures
                     String departures = departuresService.departures(route_type, stop_id, devid, signature.generate("/v3/departures/route_type/" + route_type + "/stop/" + stop_id));
 
-                    // we only want unique route and direction
                     JSONObject d = new JSONObject(departures);
                     JSONArray deps = d.getJSONArray("departures");
-                    Map<String, String> _rd = new ConcurrentHashMap<String, String>();
+
+                    log.debug("::_departures found " + deps.length() + " processing...");
+
                     for (int i = 0; i < deps.length(); i++) {
                         JSONObject _deps = deps.getJSONObject(i);
-                        _rd.put(_deps.optString("route_id"), _deps.optString("direction_id"));
-                    }
-                    log.debug("::_departures found " + _rd.size() + " processing...");
+                        String route_id = _deps.optString("route_id");
+                        String direction_id = _deps.optString("direction_id");
+                        String scheduled_departure_utc = _deps.optString("scheduled_departure_utc");
 
-                    // RouteType
-                    final String rT = routeTypes(route_type);
+                        // remove duplicates
+                        Departure departure = new Departure(route_type, stop_id, direction_id, scheduled_departure_utc);
+                        if (dhs.contains(departure)) return;
+                        dhs.add(departure);
 
-                    // Populate return list using cache if it exists
-                    _rd.forEach((key, val) -> {
                         try {
                             CacheKey _key = new CacheKey(k, v);
-                            if (routesCache.containsKey(_key)) {
-                                log.debug("Reading " + key + " from cache...");
-                                RouteDAO routeDAO = routesCache.get(_key);
-                                String routeName = routeDAO.getName();
-                                String routeNumber = routeDAO.getNumber();
-                                routeDAO.setDepartureTime(getDepartureTime()); // always update for mock
-                                rList.add(routeDAO);
+                            // remove duplicates
+                            if (cks.contains(_key)) return;
+                            cks.add(_key);
 
+                            if (routesCache.containsKey(_key)) {
+                                log.debug("Reading " + _key + " from cache...");
+                                RouteDAO routeDAO = routesCache.get(_key);
+                                rList.add(routeDAO);
                             } else {
-                                String routeName = routeNameNumber(key, "route_name");
-                                String routeNumber = routeNameNumber(key, "route_number");
                                 Integer capacity = getCapcaity();
                                 Integer vibe = getVibe();
-                                String departureTime = getDepartureTime();
-                                String routeDirection = directionName(key, val);
-                                RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, departureTime);
+                                String routeName = routeNameNumber(route_id, "route_name");
+                                String routeNumber = routeNameNumber(route_id, "route_number");
+                                String routeDirection = directionName(route_id, direction_id);
+                                RouteDAO _r = new RouteDAO(routeTypes(route_type), routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, scheduled_departure_utc);
                                 rList.add(_r);
                                 routesCache.put(_key, _r); // , 3600, TimeUnit.SECONDS
                             }
                         } catch (org.json.JSONException ex) {
                             log.error("JSON Parse error." + ex);
                         }
-                    });
+                    }
                 }
         );
 
@@ -268,7 +272,6 @@ public class RoutesResource {
             JSONObject _rts = rts.getJSONObject(i);
             _rt.put(_rts.optString("direction_id"), _rts.optString("direction_name"));
         }
-        log.info("directionName returns " + _rt.get(direction_id));
         return _rt.get(direction_id);
     }
 
