@@ -1,8 +1,6 @@
 package org.acme.routes;
 
-import com.acme.dao.CacheKey;
-import com.acme.dao.Departure;
-import com.acme.dao.RouteDAO;
+import com.acme.dao.*;
 import com.acme.rest.*;
 import com.acme.util.Signature;
 import io.quarkus.infinispan.client.Remote;
@@ -74,12 +72,22 @@ public class RoutesResource {
     RemoteCacheManager cacheManager;
 
     @Inject
-    @Remote("routes")
-    RemoteCache<CacheKey, RouteDAO> routesCache;
+    @Remote("routeType")
+    RemoteCache<String, RouteType> routeTypeCache;
+
+    @Inject
+    @Remote("routeNameNumber")
+    RemoteCache<String, RouteNameNumber> routeNameNumberCache;
+
+    @Inject
+    @Remote("directionName")
+    RemoteCache<String, DirectionName> directionNameCache;
 
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         log.info("On start - clean and load data");
-        RemoteCache<CacheKey, RouteDAO> routes = cacheManager.administration().getOrCreateCache("routes", DefaultTemplate.REPL_ASYNC);
+        RemoteCache<String, RouteType> routeType = cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
+        RemoteCache<String, RouteNameNumber> routeNameNumber = cacheManager.administration().getOrCreateCache("routeNameNumber", DefaultTemplate.REPL_ASYNC);
+        RemoteCache<String, DirectionName> directionName = cacheManager.administration().getOrCreateCache("directionName", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 
@@ -155,7 +163,7 @@ public class RoutesResource {
     @DELETE
     @Path("/clearcache")
     public void cleanCache() {
-        cleanupCaches(routesCache);
+        cleanupCaches(routeTypeCache, routeNameNumberCache, directionNameCache);
     }
 
     private List<RouteDAO> _departures(JSONObject obj) {
@@ -180,7 +188,9 @@ public class RoutesResource {
         HashSet<Departure> dhs = new HashSet<>();
         HashSet<CacheKey> cks = new HashSet<>();
 
-        log.info("Cache contains " + routesCache.size() + " items ");
+        log.info("RouteType Cache contains " + routeTypeCache.size() + " items ");
+        log.info("RouteNameNumber Cache contains " + routeNameNumberCache.size() + " items ");
+        log.info("DirectionName Cache contains " + directionNameCache.size() + " items ");
 
         _sd.forEach((k, v) -> {
                     final String route_type = v;
@@ -211,20 +221,14 @@ public class RoutesResource {
                             if (cks.contains(_key)) return;
                             cks.add(_key);
 
-                            if (routesCache.containsKey(_key)) {
-                                log.debug("Reading " + _key + " from cache...");
-                                RouteDAO routeDAO = routesCache.get(_key);
-                                rList.add(routeDAO);
-                            } else {
-                                Integer capacity = getCapcaity();
-                                Integer vibe = getVibe();
-                                String routeName = routeNameNumber(route_id, "route_name");
-                                String routeNumber = routeNameNumber(route_id, "route_number");
-                                String routeDirection = directionName(route_id, direction_id);
-                                RouteDAO _r = new RouteDAO(routeTypes(route_type), routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, scheduled_departure_utc);
-                                rList.add(_r);
-                                routesCache.put(_key, _r); // , 3600, TimeUnit.SECONDS
-                            }
+                            Integer capacity = getCapcaity();
+                            Integer vibe = getVibe();
+                            String routeName = routeNameNumber(route_id, "route_name");
+                            String routeNumber = routeNameNumber(route_id, "route_number");
+                            String routeDirection = directionName(route_id, direction_id);
+                            RouteDAO _r = new RouteDAO(routeTypes(route_type), routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, scheduled_departure_utc);
+                            rList.add(_r);
+
                         } catch (org.json.JSONException ex) {
                             log.error("JSON Parse error." + ex);
                         }
@@ -237,6 +241,9 @@ public class RoutesResource {
     }
 
     private String routeTypes(String route_type) {
+        if (routeTypeCache.containsKey(route_type)) {
+            return routeTypeCache.get(route_type).getRoute_type_name();
+        }
         // Route Type Service Call
         String routeTypes = routeTypeService.routes(devid, signature.generate("/v3/route_types"));
         JSONObject r = new JSONObject(routeTypes);
@@ -246,22 +253,34 @@ public class RoutesResource {
             JSONObject _rts = rts.getJSONObject(i);
             _rt.put(_rts.optString("route_type"), _rts.optString("route_type_name"));
         }
-        return _rt.get(route_type);
+        String routeTypeName = _rt.get(route_type);
+        routeTypeCache.put(route_type, new RouteType(route_type, routeTypeName), 3600*24, TimeUnit.SECONDS);
+        return routeTypeName;
     }
 
     private String routeNameNumber(String route_id, String nn) {
+        if (routeNameNumberCache.containsKey(route_id)) {
+            if (nn.equalsIgnoreCase("route_name"))
+                return routeNameNumberCache.get(route_id).getRoute_name();
+            else
+                return routeNameNumberCache.get(route_id).getRoute_number();
+        }
         // Route Name Service Call
         String routeName = routeService.route(route_id, devid, signature.generate("/v3/routes/" + route_id));
         JSONObject r = new JSONObject(routeName);
         String rn = r.getJSONObject("route").getString("route_name");
         log.debug("routeNameNumber " + r);
         String rnn = r.getJSONObject("route").getString("route_number");
+        routeNameNumberCache.put(route_id, new RouteNameNumber(rn, rnn), 3600*12, TimeUnit.SECONDS);
         if (nn.equalsIgnoreCase("route_name"))
             return rn;
         return rnn;
     }
 
     private String directionName(String route_id, String direction_id) {
+        if (directionNameCache.containsKey(direction_id)) {
+            return directionNameCache.get(direction_id).getDirection_name();
+        }
         // Direction Name Service Call
         String directionName = directionService.directions(route_id, devid, signature.generate("/v3/directions/route/" + route_id));
         JSONObject r = new JSONObject(directionName);
@@ -272,18 +291,23 @@ public class RoutesResource {
             JSONObject _rts = rts.getJSONObject(i);
             _rt.put(_rts.optString("direction_id"), _rts.optString("direction_name"));
         }
-        return _rt.get(direction_id);
+        String dn = _rt.get(direction_id);
+        directionNameCache.put(direction_id, new DirectionName(direction_id, dn), 3600*12, TimeUnit.SECONDS);
+        return dn;
     }
 
-    private void cleanupCaches(RemoteCache<CacheKey, RouteDAO> routes) {
+    private void cleanupCaches(RemoteCache<String, RouteType> routeType, RemoteCache<String, RouteNameNumber> routeNameNumber, RemoteCache<String, DirectionName> directionName) {
         try {
-            Uni.createFrom().item(routes.clearAsync().get(10, TimeUnit.SECONDS))
+            Uni.createFrom().item(routeType.clearAsync().get(10, TimeUnit.SECONDS))
+                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
+            Uni.createFrom().item(routeNameNumber.clearAsync().get(10, TimeUnit.SECONDS))
+                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
+            Uni.createFrom().item(directionName.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
         } catch (Exception e) {
             log.error("Something went wrong clearing data stores." + e);
         }
     }
-
 
     /*
       The methods are FAKE/MOCK for now
