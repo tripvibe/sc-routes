@@ -99,7 +99,7 @@ public class RoutesResource {
     @Produces(MediaType.SERVER_SENT_EVENTS)
     @SseElementType(MediaType.APPLICATION_JSON)
     public Publisher<List<RouteDAO>> stream(@PathParam String latlong, @PathParam String distance) {
-        Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(10)).onOverflow().drop();
+        Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(20)).onOverflow().drop();
         return ticks.on().subscribed(subscription -> log.info("We are subscribed!"))
                 .on().cancellation(() -> log.info("Downstream has cancelled the interaction"))
                 .onFailure().invoke(failure -> log.warn("Failed with " + failure.getMessage()))
@@ -176,7 +176,6 @@ public class RoutesResource {
         }
 
         List<RouteDAO> rList = new ArrayList<RouteDAO>();
-        Map<String, String> duplicates = new ConcurrentHashMap<String, String>();
 
         log.info("Cache contains " + routesCache.size() + " items ");
 
@@ -202,30 +201,25 @@ public class RoutesResource {
                     // Populate return list using cache if it exists
                     _rd.forEach((key, val) -> {
                         try {
-                            CacheKey _key = new CacheKey(k,v);
+                            CacheKey _key = new CacheKey(k, v);
                             if (routesCache.containsKey(_key)) {
                                 log.debug("Reading " + key + " from cache...");
                                 RouteDAO routeDAO = routesCache.get(_key);
                                 String routeName = routeDAO.getName();
                                 String routeNumber = routeDAO.getNumber();
-                                if (!duplicates.containsKey(routeName)) {
-                                    routeDAO.setDepartureTime(getDepartureTime()); // always update for mock
-                                    rList.add(routeDAO);
-                                }
-                                duplicates.put(routeName, routeNumber);
+                                routeDAO.setDepartureTime(getDepartureTime()); // always update for mock
+                                rList.add(routeDAO);
+
                             } else {
                                 String routeName = routeNameNumber(key, "route_name");
                                 String routeNumber = routeNameNumber(key, "route_number");
                                 Integer capacity = getCapcaity();
                                 Integer vibe = getVibe();
                                 String departureTime = getDepartureTime();
-                                if (!duplicates.containsKey(routeName)) {
-                                    String routeDirection = directionName(key, val);
-                                    RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, departureTime);
-                                    rList.add(_r);
-                                    routesCache.put(_key, _r); // , 3600, TimeUnit.SECONDS
-                                }
-                                duplicates.put(routeName, routeNumber);
+                                String routeDirection = directionName(key, val);
+                                RouteDAO _r = new RouteDAO(rT, routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, departureTime);
+                                rList.add(_r);
+                                routesCache.put(_key, _r); // , 3600, TimeUnit.SECONDS
                             }
                         } catch (org.json.JSONException ex) {
                             log.error("JSON Parse error." + ex);
@@ -274,6 +268,7 @@ public class RoutesResource {
             JSONObject _rts = rts.getJSONObject(i);
             _rt.put(_rts.optString("direction_id"), _rts.optString("direction_name"));
         }
+        log.info("directionName returns " + _rt.get(direction_id));
         return _rt.get(direction_id);
     }
 
@@ -302,7 +297,7 @@ public class RoutesResource {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         long now = new Date().getTime();
-        long minutes = (new Random().nextInt(10) + 1)*60000;
+        long minutes = (new Random().nextInt(10) + 1) * 60000;
         Date date = new Date(now + minutes);
         return df.format(date);
     }
