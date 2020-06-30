@@ -1,4 +1,4 @@
-package org.acme.routes;
+package com.acme.routes;
 
 import com.acme.dao.*;
 import com.acme.rest.*;
