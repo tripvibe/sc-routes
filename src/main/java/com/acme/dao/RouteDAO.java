@@ -22,12 +22,7 @@ public class RouteDAO {
     }
 
     @ProtoFactory
-<<<<<<< HEAD
-    public RouteDAO(final String type, final String name, final String number, final String direction,
-            final String stopName, final Integer capacity, final Integer vibe, final String departureTime) {
-=======
     public RouteDAO(String type, String name, String number, String direction, String stopName, Integer capacity, Integer vibe, String departureTime, String direction_id, String route_id) {
->>>>>>> 3a4fabedaf4cee692712253c73215abf67a87327
         this.type = type;
         this.name = name;
         this.number = number;
