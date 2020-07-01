@@ -85,9 +85,12 @@ public class RoutesResource {
 
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         log.info("On start - clean and load data");
-        RemoteCache<String, RouteType> routeType = cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
-        RemoteCache<String, RouteNameNumber> routeNameNumber = cacheManager.administration().getOrCreateCache("routeNameNumber", DefaultTemplate.REPL_ASYNC);
-        RemoteCache<String, DirectionName> directionName = cacheManager.administration().getOrCreateCache("directionName", DefaultTemplate.REPL_ASYNC);
+        //RemoteCache<String, RouteType> routeType = 
+        cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
+        //RemoteCache<String, RouteNameNumber> routeNameNumber = 
+        cacheManager.administration().getOrCreateCache("routeNameNumber", DefaultTemplate.REPL_ASYNC);
+        //RemoteCache<String, DirectionName> directionName = 
+        cacheManager.administration().getOrCreateCache("directionName", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 
@@ -167,13 +170,16 @@ public class RoutesResource {
     }
 
     private List<RouteDAO> _departures(JSONObject obj) {
+
+        List<RouteDAO> rList = new ArrayList<RouteDAO>();
+
         // get departures based on geoloc
         JSONArray stops = obj.getJSONArray("stops");
 
         // no results
         if (stops.length() == 0) {
             log.info("::_departures passed zero length stops returning");
-            return new ArrayList();
+            return rList;
         }
 
         Map<String, String> _sd = new ConcurrentHashMap<String, String>();
@@ -184,7 +190,6 @@ public class RoutesResource {
             _sn.put(_stop.optString("stop_id"), _stop.optString("stop_name"));
         }
 
-        List<RouteDAO> rList = new ArrayList<RouteDAO>();
         HashSet<Departure> dhs = new HashSet<>();
         HashSet<CacheKey> cks = new HashSet<>();
 
@@ -271,7 +276,13 @@ public class RoutesResource {
         String rn = r.getJSONObject("route").getString("route_name");
         log.debug("routeNameNumber " + r);
         String rnn = r.getJSONObject("route").getString("route_number");
-        routeNameNumberCache.put(route_id, new RouteNameNumber(rn, rnn), 3600*12, TimeUnit.SECONDS);
+        try {
+            RouteNameNumber rnnObj = new RouteNameNumber(rn, rnn);
+            routeNameNumberCache.put(route_id, rnnObj, 3600*12, TimeUnit.SECONDS);
+        } catch (Exception ex) {
+            log.warn("can't cache route '" + rnn +"'. Reason: "+ ex.getMessage());
+            log.debug("error storing to cache: "+ex);
+        }
         if (nn.equalsIgnoreCase("route_name"))
             return rn;
         return rnn;

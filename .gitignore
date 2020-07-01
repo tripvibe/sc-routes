@@ -29,6 +29,7 @@ nb-configuration.xml
 *.rej
 
 # Maven
+.mvn/
 target/
 pom.xml.tag
 pom.xml.releaseBackup

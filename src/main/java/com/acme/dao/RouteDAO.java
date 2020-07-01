@@ -20,7 +20,8 @@ public class RouteDAO {
     }
 
     @ProtoFactory
-    public RouteDAO(String type, String name, String number, String direction, String stopName, Integer capacity, Integer vibe, String departureTime) {
+    public RouteDAO(final String type, final String name, final String number, final String direction,
+            final String stopName, final Integer capacity, final Integer vibe, final String departureTime) {
         this.type = type;
         this.name = name;
         this.number = number;
@@ -45,7 +46,7 @@ public class RouteDAO {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(final String type) {
         this.type = type;
     }
 
@@ -54,7 +55,7 @@ public class RouteDAO {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -63,7 +64,7 @@ public class RouteDAO {
         return number;
     }
 
-    public void setNumber(String number) {
+    public void setNumber(final String number) {
         this.number = number;
     }
 
@@ -72,7 +73,7 @@ public class RouteDAO {
         return direction;
     }
 
-    public void setDirection(String direction) {
+    public void setDirection(final String direction) {
         this.direction = direction;
     }
 
@@ -81,7 +82,7 @@ public class RouteDAO {
         return stopName;
     }
 
-    public void setStopName(String stopName) {
+    public void setStopName(final String stopName) {
         this.stopName = stopName;
     }
 
@@ -90,7 +91,7 @@ public class RouteDAO {
         return capacity;
     }
 
-    public void setCapacity(Integer capacity) {
+    public void setCapacity(final Integer capacity) {
         this.capacity = capacity;
     }
 
@@ -99,7 +100,7 @@ public class RouteDAO {
         return vibe;
     }
 
-    public void setVibe(Integer vibe) {
+    public void setVibe(final Integer vibe) {
         this.vibe = vibe;
     }
 
@@ -108,7 +109,7 @@ public class RouteDAO {
         return departureTime;
     }
 
-    public void setDepartureTime(String departureTime) {
+    public void setDepartureTime(final String departureTime) {
         this.departureTime = departureTime;
     }
 }

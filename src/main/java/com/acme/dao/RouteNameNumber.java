@@ -8,8 +8,11 @@ public class RouteNameNumber {
     private String route_name;
     private String route_number;
 
+    public RouteNameNumber() {
+    }
+
     @ProtoFactory
-    public RouteNameNumber(String route_name, String route_number) {
+    public RouteNameNumber(final String route_name, final String route_number) {
         this.route_name = route_name;
         this.route_number = route_number;
     }
@@ -19,7 +22,7 @@ public class RouteNameNumber {
         return route_name;
     }
 
-    public void setRoute_name(String route_name) {
+    public void setRoute_name(final String route_name) {
         this.route_name = route_name;
     }
 
@@ -28,7 +31,7 @@ public class RouteNameNumber {
         return route_number;
     }
 
-    public void setRoute_number(String route_number) {
+    public void setRoute_number(final String route_number) {
         this.route_number = route_number;
     }
 }

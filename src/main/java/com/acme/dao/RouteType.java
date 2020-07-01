@@ -9,7 +9,7 @@ public class RouteType {
     private String route_type_name;
 
     @ProtoFactory
-    public RouteType(String route_type, String route_type_name) {
+    public RouteType(final String route_type, final String route_type_name) {
         this.route_type = route_type;
         this.route_type_name = route_type_name;
     }
@@ -19,7 +19,7 @@ public class RouteType {
         return route_type;
     }
 
-    public void setRoute_type(String route_type) {
+    public void setRoute_type(final String route_type) {
         this.route_type = route_type;
     }
 
@@ -28,7 +28,7 @@ public class RouteType {
         return route_type_name;
     }
 
-    public void setRoute_type_name(String route_type_name) {
+    public void setRoute_type_name(final String route_type_name) {
         this.route_type_name = route_type_name;
     }
 }
