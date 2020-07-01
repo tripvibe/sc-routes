@@ -1,22 +1,29 @@
 package com.redhat.labs.tripvibe;
 
 import com.acme.util.Signature;
-import com.redhat.labs.tripvibe.models.*;
+import com.redhat.labs.tripvibe.models.DepartureDAO;
+import com.redhat.labs.tripvibe.models.Direction;
+import com.redhat.labs.tripvibe.models.Route;
 import com.redhat.labs.tripvibe.services.DepartureRestService;
 import com.redhat.labs.tripvibe.services.DirectionRestService;
 import com.redhat.labs.tripvibe.services.RouteRestService;
 import com.redhat.labs.tripvibe.services.StopRestService;
 import io.quarkus.infinispan.client.Remote;
+import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.infinispan.client.hotrod.DefaultTemplate;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.jboss.resteasy.annotations.jaxrs.QueryParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -59,6 +66,9 @@ public class DepartureResource {
     Signature signature;
 
     @Inject
+    RemoteCacheManager cacheManager;
+
+    @Inject
     @Remote("routesCache")
     RemoteCache<Integer, Route> routesCache;
 
@@ -69,6 +79,13 @@ public class DepartureResource {
     // default to next 3 hours
     // use to retrieve departures for the next 3 hours
     private int nextHours = 3;
+
+    void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
+        log.info("On start - get caches");
+        RemoteCache<Integer, Route> routes = cacheManager.administration().getOrCreateCache("routesCache", DefaultTemplate.REPL_ASYNC);
+        RemoteCache<String, Direction> directions = cacheManager.administration().getOrCreateCache("directionsCache", DefaultTemplate.REPL_ASYNC);
+        log.info("Existing stores are " + cacheManager.getCacheNames().toString());
+    }
 
     @GET
     @Path("/nearby-departures/{latlong}/{distance}")
