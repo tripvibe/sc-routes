@@ -22,7 +22,7 @@ public class RouteDAO {
     }
 
     @ProtoFactory
-    public RouteDAO(String type, String name, String number, String direction, String stopName, Integer capacity, Integer vibe, String departureTime, String direction_id, String route_id) {
+    public RouteDAO(String type, String name, String number, String direction, String stopName, Double capacity, Double vibe, String departureTime, String direction_id, String route_id) {
         this.type = type;
         this.name = name;
         this.number = number;
@@ -40,8 +40,8 @@ public class RouteDAO {
     private String number;
     private String direction;
     private String stopName;
-    private Integer capacity;
-    private Integer vibe;
+    private Double capacity;
+    private Double vibe;
     private String departureTime;
     private String direction_id;
     private String route_id;
@@ -92,20 +92,20 @@ public class RouteDAO {
     }
 
     @ProtoField(number = 6)
-    public Integer getCapacity() {
+    public Double getCapacity() {
         return capacity;
     }
 
-    public void setCapacity(final Integer capacity) {
+    public void setCapacity(final Double capacity) {
         this.capacity = capacity;
     }
 
     @ProtoField(number = 7)
-    public Integer getVibe() {
+    public Double getVibe() {
         return vibe;
     }
 
-    public void setVibe(final Integer vibe) {
+    public void setVibe(final Double vibe) {
         this.vibe = vibe;
     }
 

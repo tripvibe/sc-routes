@@ -38,6 +38,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static javax.ws.rs.core.Response.Status;
+
 @Path("/api")
 @ApplicationScoped
 public class RoutesResource {
@@ -46,6 +48,9 @@ public class RoutesResource {
 
     @ConfigProperty(name = "com.acme.developerId")
     public String devid;
+
+    @ConfigProperty(name = "com.acme.isMock")
+    public boolean isMock;
 
     @Inject
     Signature signature;
@@ -73,6 +78,10 @@ public class RoutesResource {
     @Inject
     @RestClient
     SearchService searchService;
+
+    @Inject
+    @RestClient
+    SubmitQueryService submitQueryService;
 
     @Inject
     RemoteCacheManager cacheManager;
@@ -257,7 +266,7 @@ public class RoutesResource {
                         JSONObject _deps = deps.getJSONObject(i);
                         String route_id = _deps.optString("route_id");
                         String direction_id = _deps.optString("direction_id");
-                        String scheduled_departure_utc = _deps.optString("scheduled_departure_utc");
+                        String scheduled_departure_utc = isMock ? getDepartureTimeMock() : _deps.optString("scheduled_departure_utc");
 
                         // remove duplicates
                         Departure departure = new Departure(route_type, stop_id, direction_id, scheduled_departure_utc);
@@ -270,8 +279,8 @@ public class RoutesResource {
                             if (cks.contains(_key)) return;
                             cks.add(_key);
 
-                            Integer capacity = getCapacity();
-                            Integer vibe = getVibe();
+                            Double capacity = isMock ? getCapacityMock() : capacityAverage(route_id);
+                            Double vibe = isMock ? getVibeMock() : getVibeMock();
                             String routeName = routeNameNumber(route_id, "route_name");
                             String routeNumber = routeNameNumber(route_id, "route_number");
                             String routeDirection = directionName(route_id, direction_id);
@@ -363,18 +372,52 @@ public class RoutesResource {
         }
     }
 
+    private Double capacityAverage(String route_id) {
+        Double cap = -1.0;
+        try {
+            cap = submitQueryService.capacityAverage(route_id);
+        } catch (javax.ws.rs.WebApplicationException e) {
+            if (e.getResponse().getStatus() == Status.NOT_FOUND.getStatusCode()){
+                // OK nothing collected yet, return default
+            } else {
+                log.error("capacityAverage - something went wrong " + e);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return cap;
+    }
+
+    private Double vibeAverage(String route_id) {
+        Double cap = -1.0;
+        try {
+            cap = submitQueryService.capacityAverage(route_id);
+        } catch (javax.ws.rs.WebApplicationException e) {
+            if (e.getResponse().getStatus() == Status.NOT_FOUND.getStatusCode()){
+                // OK nothing collected yet, return default
+            } else {
+                log.error("capacityAverage - something went wrong " + e);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return cap;
+    }
+
     /*
-      The methods are FAKE/MOCK for now
+      Mocks
      */
-    private Integer getCapacity() {
-        return new Random().nextInt(100) + 1;
+    private Double getCapacityMock() {
+        Integer i = new Random().nextInt(100) + 1;
+        return i.doubleValue();
     }
 
-    private Integer getVibe() {
-        return new Random().nextInt(100) + 1;
+    private Double getVibeMock() {
+        Integer i = new Random().nextInt(100) + 1;
+        return i.doubleValue();
     }
 
-    private String getDepartureTime() {
+    private String getDepartureTimeMock() {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         long now = new Date().getTime();
