@@ -280,7 +280,7 @@ public class RoutesResource {
                             cks.add(_key);
 
                             Double capacity = isMock ? getCapacityMock() : capacityAverage(route_id);
-                            Double vibe = isMock ? getVibeMock() : getVibeMock();
+                            Double vibe = isMock ? getVibeMock() : vibeAverage(route_id);
                             String routeName = routeNameNumber(route_id, "route_name");
                             String routeNumber = routeNameNumber(route_id, "route_number");
                             String routeDirection = directionName(route_id, direction_id);
@@ -389,19 +389,19 @@ public class RoutesResource {
     }
 
     private Double vibeAverage(String route_id) {
-        Double cap = -1.0;
+        Double vib = -1.0;
         try {
-            cap = submitQueryService.capacityAverage(route_id);
+            vib = submitQueryService.vibeAverage(route_id);
         } catch (javax.ws.rs.WebApplicationException e) {
             if (e.getResponse().getStatus() == Status.NOT_FOUND.getStatusCode()){
                 // OK nothing collected yet, return default
             } else {
-                log.error("capacityAverage - something went wrong " + e);
+                log.error("vibeAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        return cap;
+        return vib;
     }
 
     /*
