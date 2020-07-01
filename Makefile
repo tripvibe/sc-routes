@@ -33,7 +33,7 @@ podman-push-nobuild:
 	podman push ${IMG}
 
 podman-run:
-	podman-compose -f docker-compose.yml up -d
+	podman-compose -f docker-compose.yaml up -d
 
 podman-stop:
-	podman-compose -f docker-compose.yml down
+	podman-compose -f docker-compose.yaml down
