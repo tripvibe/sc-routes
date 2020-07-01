@@ -322,8 +322,7 @@ public class RoutesResource {
             RouteNameNumber rnnObj = new RouteNameNumber(rn, rnn);
             routeNameNumberCache.put(route_id, rnnObj, 3600*12, TimeUnit.SECONDS);
         } catch (Exception ex) {
-            log.warn("can't cache route '" + rnn +"'. Reason: "+ ex.getMessage());
-            log.debug("error storing to cache: "+ex);
+            log.warn("Can't cache routeNameNumber '" + rnn +"'. Reason: "+ ex.getMessage());
         }
         if (nn.equalsIgnoreCase("route_name"))
             return rn;
