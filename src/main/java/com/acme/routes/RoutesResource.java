@@ -69,6 +69,10 @@ public class RoutesResource {
     DirectionService directionService;
 
     @Inject
+    @RestClient
+    SearchService searchService;
+
+    @Inject
     RemoteCacheManager cacheManager;
 
     @Inject
@@ -103,6 +107,18 @@ public class RoutesResource {
         ).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
     }
 
+    private Multi<String> stopsMultiSearch(String route_types, String search_term) {
+        return Multi.createFrom().item(searchService.routes(search_term, route_types, "false", devid, signature.generate("/v3/search/" + search_term + "?route_types=" + route_types + "&include_outlets=false"))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+    }
+
+    private Multi<List<RouteDAO>> departMultiSearch(String route_types, String search_term) {
+        return Multi.createFrom().iterable(
+                stopsMultiSearch(route_types, search_term).collectItems().asList().await().indefinitely()
+        ).map(
+                x -> _departures(new JSONObject(x))
+        ).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+    }
+
     @GET
     @Path("/routes/{latlong}/{distance}")
     @Produces(MediaType.SERVER_SENT_EVENTS)
@@ -123,6 +139,28 @@ public class RoutesResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<RouteDAO> oneShot(@PathParam String latlong, @PathParam String distance) {
         return departMulti(latlong, distance).collectItems().first().await().indefinitely();
+    }
+
+    @GET
+    @Path("/routes/search/{route_types}/{search_term}")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    @SseElementType(MediaType.APPLICATION_JSON)
+    public Publisher<List<RouteDAO>> streamSearch(@PathParam String route_types, @PathParam String search_term) {
+        Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(20)).onOverflow().drop();
+        return ticks.on().subscribed(subscription -> log.info("We are subscribed!"))
+                .on().cancellation(() -> log.info("Downstream has cancelled the interaction"))
+                .onFailure().invoke(failure -> log.warn("Failed with " + failure.getMessage()))
+                .onCompletion().invoke(() -> log.info("Completed"))
+                .onItem().produceMulti(
+                        x -> departMultiSearch(route_types, search_term)
+                ).merge();
+    }
+
+    @GET
+    @Path("/search/routes/search/{route_types}/{search_term}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<RouteDAO> oneShotSearch(@PathParam String route_types, @PathParam String search_term) {
+        return departMultiSearch(route_types, search_term).collectItems().first().await().indefinitely();
     }
 
     @GET
@@ -164,6 +202,13 @@ public class RoutesResource {
     @Path("/clearcache")
     public void cleanCache() {
         cleanupCaches(routeTypeCache, routeNameNumberCache, directionNameCache);
+    }
+
+    @GET
+    @Path("/search/{route_types}/{search_term}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String search(@PathParam String search_term, @PathParam String route_types) {
+        return searchService.routes(search_term, route_types, "false", devid, signature.generate("/v3/search/" + search_term + "?route_types=" + route_types + "&include_outlets=false"));
     }
 
     private List<RouteDAO> _departures(JSONObject obj) {
@@ -221,12 +266,12 @@ public class RoutesResource {
                             if (cks.contains(_key)) return;
                             cks.add(_key);
 
-                            Integer capacity = getCapcaity();
+                            Integer capacity = getCapacity();
                             Integer vibe = getVibe();
                             String routeName = routeNameNumber(route_id, "route_name");
                             String routeNumber = routeNameNumber(route_id, "route_number");
                             String routeDirection = directionName(route_id, direction_id);
-                            RouteDAO _r = new RouteDAO(routeTypes(route_type), routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, scheduled_departure_utc);
+                            RouteDAO _r = new RouteDAO(routeTypes(route_type), routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, scheduled_departure_utc, direction_id, route_id);
                             rList.add(_r);
 
                         } catch (org.json.JSONException ex) {
@@ -312,7 +357,7 @@ public class RoutesResource {
     /*
       The methods are FAKE/MOCK for now
      */
-    private Integer getCapcaity() {
+    private Integer getCapacity() {
         return new Random().nextInt(100) + 1;
     }
 

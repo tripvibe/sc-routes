@@ -16,11 +16,13 @@ public class RouteDAO {
                 ", capacity=" + capacity +
                 ", vibe=" + vibe +
                 ", departureTime='" + departureTime + '\'' +
+                ", direction_id='" + direction_id + '\'' +
+                ", route_id='" + route_id + '\'' +
                 '}';
     }
 
     @ProtoFactory
-    public RouteDAO(String type, String name, String number, String direction, String stopName, Integer capacity, Integer vibe, String departureTime) {
+    public RouteDAO(String type, String name, String number, String direction, String stopName, Integer capacity, Integer vibe, String departureTime, String direction_id, String route_id) {
         this.type = type;
         this.name = name;
         this.number = number;
@@ -29,6 +31,8 @@ public class RouteDAO {
         this.capacity = capacity;
         this.vibe = vibe;
         this.departureTime = departureTime;
+        this.direction_id = direction_id;
+        this.route_id = route_id;
     }
 
     private String type;
@@ -39,6 +43,8 @@ public class RouteDAO {
     private Integer capacity;
     private Integer vibe;
     private String departureTime;
+    private String direction_id;
+    private String route_id;
 
     @ProtoField(number = 1)
     public String getType() {
@@ -111,4 +117,23 @@ public class RouteDAO {
     public void setDepartureTime(String departureTime) {
         this.departureTime = departureTime;
     }
+
+    @ProtoField(number = 9)
+    public String getDirection_id() {
+        return direction_id;
+    }
+
+    public void setDirection_id(String direction_id) {
+        this.direction_id = direction_id;
+    }
+
+    @ProtoField(number = 10)
+    public String getRoute_id() {
+        return route_id;
+    }
+
+    public void setRoute_id(String route_id) {
+        this.route_id = route_id;
+    }
+
 }
