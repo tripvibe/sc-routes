@@ -34,7 +34,7 @@ public class DepartureDAO {
     private String direction;
     @JsonbProperty("stop_name")
     private String stopName;
-    @JsonbProperty("departure_ime")
+    @JsonbProperty("departure_time")
     private String departureTime;
     @JsonbProperty("route_type")
     private String routeType;
