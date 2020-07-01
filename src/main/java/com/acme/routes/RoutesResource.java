@@ -88,13 +88,10 @@ public class RoutesResource {
     RemoteCache<String, DirectionName> directionNameCache;
 
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
-        log.info("On start - clean and load data");
-        //RemoteCache<String, RouteType> routeType = 
-        cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
-        //RemoteCache<String, RouteNameNumber> routeNameNumber = 
-        cacheManager.administration().getOrCreateCache("routeNameNumber", DefaultTemplate.REPL_ASYNC);
-        //RemoteCache<String, DirectionName> directionName = 
-        cacheManager.administration().getOrCreateCache("directionName", DefaultTemplate.REPL_ASYNC);
+        log.info("On start - get caches");
+        RemoteCache<String, RouteType> routeType = cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
+        RemoteCache<String, RouteNameNumber> routeNameNumber = cacheManager.administration().getOrCreateCache("routeNameNumber", DefaultTemplate.REPL_ASYNC);
+        RemoteCache<String, DirectionName> directionName = cacheManager.administration().getOrCreateCache("directionName", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 
@@ -149,7 +146,7 @@ public class RoutesResource {
     @Produces(MediaType.SERVER_SENT_EVENTS)
     @SseElementType(MediaType.APPLICATION_JSON)
     public Publisher<List<RouteDAO>> streamSearch(@PathParam String route_types, @PathParam String search_term) {
-        Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(20)).onOverflow().drop();
+        Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(60)).onOverflow().drop();
         return ticks.on().subscribed(subscription -> log.info("We are subscribed!"))
                 .on().cancellation(() -> log.info("Downstream has cancelled the interaction"))
                 .onFailure().invoke(failure -> log.warn("Failed with " + failure.getMessage()))

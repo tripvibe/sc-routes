@@ -8,9 +8,6 @@ public class RouteNameNumber {
     private String route_name;
     private String route_number;
 
-    public RouteNameNumber() {
-    }
-
     @ProtoFactory
     public RouteNameNumber(final String route_name, final String route_number) {
         this.route_name = route_name;
