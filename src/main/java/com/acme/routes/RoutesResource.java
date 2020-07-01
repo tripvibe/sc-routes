@@ -30,6 +30,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
@@ -108,7 +110,7 @@ public class RoutesResource {
     }
 
     private Multi<String> stopsMultiSearch(String route_types, String search_term) {
-        return Multi.createFrom().item(searchService.routes(search_term, route_types, "false", devid, signature.generate("/v3/search/" + search_term + "?route_types=" + route_types + "&include_outlets=false"))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+        return Multi.createFrom().item(searchService.routes(search_term, route_types, "false", devid, signature.generate("/v3/search/" + URLEncoder.encode(search_term, StandardCharsets.UTF_8).replace("+", "%20") + "?route_types=" + route_types + "&include_outlets=false"))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
     }
 
     private Multi<List<RouteDAO>> departMultiSearch(String route_types, String search_term) {
@@ -301,7 +303,7 @@ public class RoutesResource {
             _rt.put(_rts.optString("route_type"), _rts.optString("route_type_name"));
         }
         String routeTypeName = _rt.get(route_type);
-        routeTypeCache.put(route_type, new RouteType(route_type, routeTypeName), 3600*24, TimeUnit.SECONDS);
+        routeTypeCache.put(route_type, new RouteType(route_type, routeTypeName), 3600 * 24, TimeUnit.SECONDS);
         return routeTypeName;
     }
 
@@ -320,9 +322,9 @@ public class RoutesResource {
         String rnn = r.getJSONObject("route").getString("route_number");
         try {
             RouteNameNumber rnnObj = new RouteNameNumber(rn, rnn);
-            routeNameNumberCache.put(route_id, rnnObj, 3600*12, TimeUnit.SECONDS);
+            routeNameNumberCache.put(route_id, rnnObj, 3600 * 12, TimeUnit.SECONDS);
         } catch (Exception ex) {
-            log.warn("Can't cache routeNameNumber '" + rnn +"'. Reason: "+ ex.getMessage());
+            log.warn("Can't cache routeNameNumber '" + rnn + "'. Reason: " + ex.getMessage());
         }
         if (nn.equalsIgnoreCase("route_name"))
             return rn;
@@ -344,7 +346,7 @@ public class RoutesResource {
             _rt.put(_rts.optString("direction_id"), _rts.optString("direction_name"));
         }
         String dn = _rt.get(direction_id);
-        directionNameCache.put(direction_id, new DirectionName(direction_id, dn), 3600*12, TimeUnit.SECONDS);
+        directionNameCache.put(direction_id, new DirectionName(direction_id, dn), 3600 * 12, TimeUnit.SECONDS);
         return dn;
     }
 

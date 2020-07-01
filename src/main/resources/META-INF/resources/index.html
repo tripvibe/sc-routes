@@ -6,7 +6,9 @@
 
     <link rel="stylesheet" type="text/css"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+
 </head>
+
 <body>
 
 <div class="container">
@@ -19,21 +21,21 @@
     <form class="form-inline" id="form">
         <div class="form-group">
             <div class="col-md-4">
-                <label class="col-md-4 control-label" for="latitude">latitude</label>
+                <label class="col-md-4 control-label" for="latitude" style="justify-content: left !important">latitude</label>
                 <input id="latitude" name="latitude" type="text" placeholder="-37.8974484"
                        class="form-control input-md">
             </div>
         </div>
         <div class="form-group">
             <div class="col-md-4">
-                <label class="col-md-4 control-label" for="longitude">longitude</label>
+                <label class="col-md-4 control-label" for="longitude" style="justify-content: left !important">longitude</label>
                 <input id="longitude" name="longitude" type="text" placeholder="145.088703"
                        class="form-control input-md">
             </div>
         </div>
         <div class="form-group">
             <div class="col-md-4">
-                <label class="col-md-4 control-label" for="longitude">distance(m)</label>
+                <label class="col-md-4 control-label" for="longitude" style="justify-content: left !important">distance(m)</label>
                 <input id="distance" name="distance" type="text" placeholder="200"
                        class="form-control input-md">
             </div>
@@ -48,13 +50,70 @@
 
     <br>
 
+    <form class="form-inline">
+        <div class="form-group">
+            <label class="col-md-4 control-label" for="search_term">Search Term</label>
+            <div class="col-md-4">
+                <input id="search_term" name="search_term" type="text" placeholder="melbourne zoo"
+                       class="form-control input-md">
+
+            </div>
+        </div>
+        <!-- Multiple Radios -->
+        <div class="form-group">
+            <label class="col-md-4 control-label" for="radios">Route Type</label>
+            <div class="col-md-8">
+                <div class="radio">
+                    <label for="radios-0" style="justify-content: left !important" >
+                        <input type="radio" name="radios" id="radios-0" value="0">
+                        Train
+                    </label>
+                </div>
+                <div class="radio">
+                    <label for="radios-1" style="justify-content: left !important">
+                        <input type="radio" name="radios" id="radios-1" value="1">
+                        Tram
+                    </label>
+                </div>
+                <div class="radio">
+                    <label for="radios-2" style="justify-content: left !important">
+                        <input type="radio" name="radios" id="radios-2" value="2" checked="checked">
+                        Bus
+                    </label>
+                </div>
+                <div class="radio">
+                    <label for="radios-3" style="justify-content: left !important">
+                        <input type="radio" name="radios" id="radios-3" value="3">
+                        Vline
+                    </label>
+                </div>
+                <div class="radio">
+                    <label for="radios-4" style="justify-content: left !important">
+                        <input type="radio" name="radios" id="radios-4" value="4">
+                        Night Bus
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <button type="button" id="btnFetchSearch" class="btn btn-primary mb-2">Submit</button>
+        </div>
+        <div class="form-group" id="CancelSearch">
+            <button type="button" id="btnCancelSearch" class="btn btn-primary mb-2">Cancel</button>
+        </div>
+    </form>
+
+    <br>
+
     <table class="table table-striped">
         <thead class="thead-dark">
         <tr>
             <th>Type</th>
             <th>Number</th>
             <th>Name</th>
+            <th>RouteID</th>
             <th>Direction</th>
+            <th>DirectionID</th>
             <th>StopName</th>
             <th>Capacity</th>
             <th>Vibe</th>
@@ -81,6 +140,12 @@
 
     var y = document.getElementById("btnFetch");
     y.addEventListener("click", myClickFunction, true);
+
+    var v = document.getElementById("btnCancelSearch");
+    v.addEventListener("click", myCancelFunctionSearch, true);
+
+    var w = document.getElementById("btnFetchSearch");
+    w.addEventListener("click", myClickFunctionSearch, true);
 
     var source
 
@@ -122,6 +187,43 @@
         source.onmessage = eventHandler;
     }
 
+    function myClickFunctionSearch() {
+        $("tbody").empty();
+        startSearch();
+        // disable button
+        $(this).prop("disabled", true);
+        $(this).html(
+          `<div id="spinnerSearch"><span class="spinner-border spinner-border-sm float-right" role="status" aria-hidden="true"></span> Loading...</div>`
+        );
+    }
+
+    function myCancelFunctionSearch() {
+        $("tbody").empty();
+        source.close();
+        var spinner = document.getElementById("spinnerSearch");
+        spinner.parentNode.removeChild(spinner);
+        var newElement = document.createElement('div');
+        newElement.innerHTML = '<button type="button" id="btnFetchSearch" class="btn btn-primary mb-2"></button>';
+        newElement.addEventListener("click", myClickFunctionSearch, true);
+        newElement.text = "Submit";
+        $(this).insertBefore(this, newElement);
+        document.getElementById("btnFetchSearch").disabled = false;
+        document.getElementById("btnFetchSearch").innerHTML = "Submit"
+    }
+
+    function startSearch() {
+        var search_term = document.getElementById('search_term').value ? document.getElementById('search_term').value : document.getElementById('search_term').placeholder;
+        var route_type = document.querySelector("input[name=radios]:checked").value;
+        var host = location.hostname
+        if (host == 'localhost')  {
+            //console.log(lat , lon, dis);
+            source = new EventSource("http://localhost:8080/api/routes/search/" + route_type + "/" + search_term);
+        } else {
+            source = new EventSource("https://" + location.hostname + "/api/routes/search/" + route_type + "/" + search_term);
+        }
+        source.onmessage = eventHandler;
+    }
+
     function eventHandler (e) {
         /* handle e */
         //console.log(e);
@@ -138,12 +240,15 @@
                "<td>" + state.type + "</td>" +
                "<td>" + state.number + "</td>" +
                "<td>" + state.name + "</td>" +
+               "<td>" + state.route_id + "</td>" +
                "<td>" + state.direction + "</td>" +
+               "<td>" + state.direction_id + "</td>" +
                "<td>" + state.stopName + "</td>" +
                "<td>" + state.capacity + "</td>" +
                "<td>" + state.vibe + "</td>" +
                "<td>" + state.departureTime + "</td></tr>";
     }
+
 
 </script>
 </html>
