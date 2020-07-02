@@ -135,7 +135,7 @@ public class RoutesResource {
     @Produces(MediaType.SERVER_SENT_EVENTS)
     @SseElementType(MediaType.APPLICATION_JSON)
     public Publisher<List<RouteDAO>> stream(@PathParam String latlong, @PathParam String distance) {
-        Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(20)).onOverflow().drop();
+        Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(60)).onOverflow().drop();
         return ticks.on().subscribed(subscription -> log.info("We are subscribed!"))
                 .on().cancellation(() -> log.info("Downstream has cancelled the interaction"))
                 .onFailure().invoke(failure -> log.warn("Failed with " + failure.getMessage()))
@@ -285,6 +285,7 @@ public class RoutesResource {
                             String routeNumber = routeNameNumber(route_id, "route_number");
                             String routeDirection = directionName(route_id, direction_id);
                             RouteDAO _r = new RouteDAO(routeTypes(route_type), routeName, routeNumber, routeDirection, _sn.get(k), capacity, vibe, scheduled_departure_utc, direction_id, route_id);
+                            log.debug("RouteDAO: " + _r);
                             rList.add(_r);
 
                         } catch (org.json.JSONException ex) {
@@ -375,10 +376,13 @@ public class RoutesResource {
     private Double capacityAverage(String route_id) {
         Double cap = -1.0;
         try {
-            cap = submitQueryService.capacityAverage(route_id);
+            Double ret = submitQueryService.capacityAverage(route_id);
+            if (null != ret) cap = ret;
         } catch (javax.ws.rs.WebApplicationException e) {
-            if (e.getResponse().getStatus() == Status.NOT_FOUND.getStatusCode()){
+            if (e.getResponse().getStatus() == Status.NOT_FOUND.getStatusCode()
+                    || e.getResponse().getStatus() == Status.NO_CONTENT.getStatusCode()) {
                 // OK nothing collected yet, return default
+                log.debug("capacityAverage - nothing found: " + e.getResponse().getStatus());
             } else {
                 log.error("capacityAverage - something went wrong " + e);
             }
@@ -391,10 +395,13 @@ public class RoutesResource {
     private Double vibeAverage(String route_id) {
         Double vib = -1.0;
         try {
-            vib = submitQueryService.vibeAverage(route_id);
+            Double ret = submitQueryService.vibeAverage(route_id);
+            if (null != ret) vib = ret;
         } catch (javax.ws.rs.WebApplicationException e) {
-            if (e.getResponse().getStatus() == Status.NOT_FOUND.getStatusCode()){
+            if (e.getResponse().getStatus() == Status.NOT_FOUND.getStatusCode()
+                    || e.getResponse().getStatus() == Status.NO_CONTENT.getStatusCode()) {
                 // OK nothing collected yet, return default
+                log.debug("vibeAverage - nothing found: " + e.getResponse().getStatus());
             } else {
                 log.error("vibeAverage - something went wrong " + e);
             }

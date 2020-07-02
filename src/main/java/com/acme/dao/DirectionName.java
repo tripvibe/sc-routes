@@ -3,10 +3,15 @@ package com.acme.dao;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 
-public class DirectionName {
+import java.io.Serializable;
+
+public class DirectionName implements Serializable {
 
     private String direction_id;
     private String direction_name;
+
+    public DirectionName() {
+    }
 
     @ProtoFactory
     public DirectionName(String direction_id, String direction_name) {
