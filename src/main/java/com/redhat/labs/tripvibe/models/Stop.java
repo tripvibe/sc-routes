@@ -1,102 +1,94 @@
 package com.redhat.labs.tripvibe.models;
 
-import javax.json.bind.annotation.JsonbProperty;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 public class Stop {
 
-    @JsonbProperty("stop_distance")
-    private Double stopDistance;
-    @JsonbProperty("stop_suburb")
-    private String stopSuburb;
-    @JsonbProperty("stop_name")
-    private String stopName;
+    private Double stop_distance;
+    private String stop_suburb;
+    private String stop_name;
+    private Integer stop_id;
+    private Integer route_type;
+    private Double stop_latitude;
+    private Double stop_longitude;
+    private Integer stop_sequence;
 
-    public Stop() {}
-
-    public Stop(Double stopDistance, String stopSuburb, String stopName, Integer stopId, Integer routeType, Double stopLatitude, Double stopLongitude, Integer stopSequence) {
-        this.stopDistance = stopDistance;
-        this.stopSuburb = stopSuburb;
-        this.stopName = stopName;
-        this.stopId = stopId;
-        this.routeType = routeType;
-        this.stopLatitude = stopLatitude;
-        this.stopLongitude = stopLongitude;
-        this.stopSequence = stopSequence;
+    public Stop() {
     }
 
-    @JsonbProperty("stop_id")
-    private Integer stopId;
-
-    public Double getStopDistance() {
-        return stopDistance;
+    public Stop(Double stop_distance, String stop_suburb, String stop_name, Integer stop_id, Integer route_type, Double stop_latitude, Double stop_longitude, Integer stop_sequence) {
+        this.stop_distance = stop_distance;
+        this.stop_suburb = stop_suburb;
+        this.stop_name = stop_name;
+        this.stop_id = stop_id;
+        this.route_type = route_type;
+        this.stop_latitude = stop_latitude;
+        this.stop_longitude = stop_longitude;
+        this.stop_sequence = stop_sequence;
     }
 
-    public void setStopDistance(Double stopDistance) {
-        this.stopDistance = stopDistance;
+    public Double getStop_distance() {
+        return stop_distance;
     }
 
-    public String getStopSuburb() {
-        return stopSuburb;
+    public void setStop_distance(Double stop_distance) {
+        this.stop_distance = stop_distance;
     }
 
-    public void setStopSuburb(String stopSuburb) {
-        this.stopSuburb = stopSuburb;
+    public String getStop_suburb() {
+        return stop_suburb;
     }
 
-    public String getStopName() {
-        return stopName;
+    public void setStop_suburb(String stop_suburb) {
+        this.stop_suburb = stop_suburb;
     }
 
-    public void setStopName(String stopName) {
-        this.stopName = stopName;
+    public String getStop_name() {
+        return stop_name;
     }
 
-    public Integer getStopId() {
-        return stopId;
+    public void setStop_name(String stop_name) {
+        this.stop_name = stop_name;
     }
 
-    public void setStopId(Integer stopId) {
-        this.stopId = stopId;
+    public Integer getStop_id() {
+        return stop_id;
     }
 
-    public Integer getRouteType() {
-        return routeType;
+    public void setStop_id(Integer stop_id) {
+        this.stop_id = stop_id;
     }
 
-    public void setRouteType(Integer routeType) {
-        this.routeType = routeType;
+    public Integer getRoute_type() {
+        return route_type;
     }
 
-    public Double getStopLatitude() {
-        return stopLatitude;
+    public void setRoute_type(Integer route_type) {
+        this.route_type = route_type;
     }
 
-    public void setStopLatitude(Double stopLatitude) {
-        this.stopLatitude = stopLatitude;
+    public Double getStop_latitude() {
+        return stop_latitude;
     }
 
-    public Double getStopLongitude() {
-        return stopLongitude;
+    public void setStop_latitude(Double stop_latitude) {
+        this.stop_latitude = stop_latitude;
     }
 
-    public void setStopLongitude(Double stopLongitude) {
-        this.stopLongitude = stopLongitude;
+    public Double getStop_longitude() {
+        return stop_longitude;
     }
 
-    public Integer getStopSequence() {
-        return stopSequence;
+    public void setStop_longitude(Double stop_longitude) {
+        this.stop_longitude = stop_longitude;
     }
 
-    public void setStopSequence(Integer stopSequence) {
-        this.stopSequence = stopSequence;
+    public Integer getStop_sequence() {
+        return stop_sequence;
     }
 
-    @JsonbProperty("route_type")
-    private Integer routeType;
-    @JsonbProperty("stop_latitude")
-    private Double stopLatitude;
-    @JsonbProperty("stop_longitude")
-    private Double stopLongitude;
-    @JsonbProperty("stop_sequence")
-    private Integer stopSequence;
+    public void setStop_sequence(Integer stop_sequence) {
+        this.stop_sequence = stop_sequence;
+    }
+
 }

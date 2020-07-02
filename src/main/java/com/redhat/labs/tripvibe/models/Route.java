@@ -3,65 +3,57 @@ package com.redhat.labs.tripvibe.models;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 
-import javax.json.bind.annotation.JsonbProperty;
-
 public class Route {
 
-    @JsonbProperty("route_type")
-    private Integer routeType;
+    private Integer route_type;
+    private Integer route_id;
+    private String route_name;
+    private String route_number;
 
-    @JsonbProperty("route_id")
-    private Integer routeId;
-
-    @JsonbProperty("route_name")
-    private String routeName;
-
-    @JsonbProperty("route_number")
-    private String routeNumber;
-
-    public Route() {}
+    public Route() {
+    }
 
     @ProtoFactory
-    public Route(Integer routeType, Integer routeId, String routeName, String routeNumber) {
-        this.routeType = routeType;
-        this.routeId = routeId;
-        this.routeName = routeName;
-        this.routeNumber = routeNumber;
+    public Route(Integer route_type, Integer route_id, String route_name, String route_number) {
+        this.route_type = route_type;
+        this.route_id = route_id;
+        this.route_name = route_name;
+        this.route_number = route_number;
     }
 
     @ProtoField(number = 1)
-    public Integer getRouteType() {
-        return routeType;
+    public Integer getRoute_type() {
+        return route_type;
     }
 
-    public void setRouteType(Integer routeType) {
-        this.routeType = routeType;
+    public void setRoute_type(Integer route_type) {
+        this.route_type = route_type;
     }
 
     @ProtoField(number = 2)
-    public Integer getRouteId() {
-        return routeId;
+    public Integer getRoute_id() {
+        return route_id;
     }
 
-    public void setRouteId(Integer routeId) {
-        this.routeId = routeId;
+    public void setRoute_id(Integer route_id) {
+        this.route_id = route_id;
     }
 
     @ProtoField(number = 3)
-    public String getRouteName() {
-        return routeName;
+    public String getRoute_name() {
+        return route_name;
     }
 
-    public void setRouteName(String routeName) {
-        this.routeName = routeName;
+    public void setRoute_name(String route_name) {
+        this.route_name = route_name;
     }
 
     @ProtoField(number = 4)
-    public String getRouteNumber() {
-        return routeNumber;
+    public String getRoute_number() {
+        return route_number;
     }
 
-    public void setRouteNumber(String routeNumber) {
-        this.routeNumber = routeNumber;
+    public void setRoute_number(String route_number) {
+        this.route_number = route_number;
     }
 }
