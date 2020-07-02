@@ -271,9 +271,9 @@ public class DepartureResource {
 //            log.info("Stop Id = " + stop.left.getStopId());
             Set<Departure> departures = departureService.departures(stop.right, stop.left.getStop_id(),
                     devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))
-                    .getDepartures()
+                    .getDepartures().stream()
                     //only return departures from NOW until the next few hours <nextHours> - defaults to 3
-                    .stream().filter(dep ->
+                    .filter(dep ->
                             dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(1, ChronoUnit.HOURS)))
                     .collect(Collectors.toSet());
