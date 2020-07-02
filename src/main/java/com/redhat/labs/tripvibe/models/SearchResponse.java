@@ -18,4 +18,6 @@ public class SearchResponse extends Response {
 
     @JsonbProperty("stops")
     private Set<Stop> stops;
+
+    public SearchResponse(){}
 }
