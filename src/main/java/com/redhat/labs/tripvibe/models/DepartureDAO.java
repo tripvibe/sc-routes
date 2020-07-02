@@ -3,7 +3,9 @@ package com.redhat.labs.tripvibe.models;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 
-public class DepartureDAO {
+import java.io.Serializable;
+
+public class DepartureDAO implements Serializable {
 
     private String route_name;
     private String route_number;

@@ -3,7 +3,9 @@ package com.redhat.labs.tripvibe.models;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 
-public class Route {
+import java.io.Serializable;
+
+public class Route implements Serializable {
 
     private Integer route_type;
     private Integer route_id;
