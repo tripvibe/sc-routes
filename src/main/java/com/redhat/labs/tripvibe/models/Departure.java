@@ -1,103 +1,94 @@
 package com.redhat.labs.tripvibe.models;
 
-import javax.json.bind.annotation.JsonbProperty;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 
 public class Departure {
-    public Integer getStopId() {
-        return stopId;
+
+    private Integer stop_id;
+    private Integer route_id;
+    private Integer direction_id;
+    private Instant scheduled_departure_utc;
+    private Instant estimated_departure_utc;
+    private Boolean at_platform;
+    private Integer platform_number;
+    private Integer run_id;
+
+    public Departure() {
     }
 
-    public void setStopId(Integer stopId) {
-        this.stopId = stopId;
+    public Departure(Integer stop_id, Integer route_id, Integer direction_id, Instant scheduled_departure_utc,
+                     Instant estimated_departure_utc, Boolean at_platform, Integer platform_number, Integer run_id) {
+        this.stop_id = stop_id;
+        this.route_id = route_id;
+        this.direction_id = direction_id;
+        this.scheduled_departure_utc = scheduled_departure_utc;
+        this.estimated_departure_utc = estimated_departure_utc;
+        this.at_platform = at_platform;
+        this.platform_number = platform_number;
+        this.run_id = run_id;
     }
 
-    public Integer getRouteId() {
-        return routeId;
+    public Integer getStop_id() {
+        return stop_id;
     }
 
-    public void setRouteId(Integer routeId) {
-        this.routeId = routeId;
+    public void setStop_id(Integer stop_id) {
+        this.stop_id = stop_id;
     }
 
-    public Integer getDirectionId() {
-        return directionId;
+    public Integer getRoute_id() {
+        return route_id;
     }
 
-    public void setDirectionId(Integer directionId) {
-        this.directionId = directionId;
+    public void setRoute_id(Integer route_id) {
+        this.route_id = route_id;
     }
 
-    public Instant getScheduledDepartureUTC() {
-        return scheduledDepartureUTC;
+    public Integer getDirection_id() {
+        return direction_id;
     }
 
-    public void setScheduledDepartureUTC(Instant scheduledDepartureUTC) {
-        this.scheduledDepartureUTC = scheduledDepartureUTC;
+    public void setDirection_id(Integer direction_id) {
+        this.direction_id = direction_id;
     }
 
-    public Instant getEstimatedDepartureUTC() {
-        return estimatedDepartureUTC;
+    public Instant getScheduled_departure_utc() {
+        return scheduled_departure_utc;
     }
 
-    public void setEstimatedDepartureUTC(Instant estimatedDepartureUTC) {
-        this.estimatedDepartureUTC = estimatedDepartureUTC;
+    public void setScheduled_departure_utc(Instant scheduled_departure_utc) {
+        this.scheduled_departure_utc = scheduled_departure_utc;
     }
 
-    public Boolean getAtPlatform() {
-        return atPlatform;
+    public Instant getEstimated_departure_utc() {
+        return estimated_departure_utc;
     }
 
-    public void setAtPlatform(Boolean atPlatform) {
-        this.atPlatform = atPlatform;
+    public void setEstimated_departure_utc(Instant estimated_departure_utc) {
+        this.estimated_departure_utc = estimated_departure_utc;
     }
 
-    public Integer getPlatformNumber() {
-        return platformNumber;
+    public Boolean getAt_platform() {
+        return at_platform;
     }
 
-    public void setPlatformNumber(Integer platformNumber) {
-        this.platformNumber = platformNumber;
+    public void setAt_platform(Boolean at_platform) {
+        this.at_platform = at_platform;
     }
 
-    public Departure(Integer stopId, Integer routeId, Integer directionId, Instant scheduledDepartureUTC,
-                     Instant estimatedDepartureUTC, Boolean atPlatform, Integer platformNumber, Integer runId) {
-        this.stopId = stopId;
-        this.routeId = routeId;
-        this.directionId = directionId;
-        this.scheduledDepartureUTC = scheduledDepartureUTC;
-        this.estimatedDepartureUTC = estimatedDepartureUTC;
-        this.atPlatform = atPlatform;
-        this.platformNumber = platformNumber;
-        this.runId = runId;
+    public Integer getPlatform_number() {
+        return platform_number;
     }
 
-    @JsonbProperty("stop_id")
-    private Integer stopId;
-    @JsonbProperty("route_id")
-    private Integer routeId;
-    @JsonbProperty("direction_id")
-    private Integer directionId;
-    @JsonbProperty("scheduled_departure_utc")
-    private Instant scheduledDepartureUTC;
-    @JsonbProperty("estimated_departure_utc")
-    private Instant estimatedDepartureUTC;
-    @JsonbProperty("at_platform")
-    private Boolean atPlatform;
-    @JsonbProperty("platform_number")
-    private Integer platformNumber;
-
-    public Integer getRunId() {
-        return runId;
+    public void setPlatform_number(Integer platform_number) {
+        this.platform_number = platform_number;
     }
 
-    public void setRunId(Integer runId) {
-        this.runId = runId;
+    public Integer getRun_id() {
+        return run_id;
     }
 
-    @JsonbProperty("run_id")
-    private Integer runId;
-
-    public Departure() {}
+    public void setRun_id(Integer run_id) {
+        this.run_id = run_id;
+    }
 }

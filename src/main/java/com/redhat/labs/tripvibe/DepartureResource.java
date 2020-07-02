@@ -1,10 +1,13 @@
 package com.redhat.labs.tripvibe;
 
 import com.acme.util.Signature;
+
 import com.redhat.labs.tripvibe.models.DepartureDAO;
 import com.redhat.labs.tripvibe.models.Direction;
 import com.redhat.labs.tripvibe.models.Route;
 import com.redhat.labs.tripvibe.services.*;
+import com.redhat.labs.tripvibe.models.*;
+
 import io.quarkus.infinispan.client.Remote;
 import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -110,51 +113,51 @@ public class DepartureResource {
         if (nextHours != null) this.nextHours = nextHours;
 
         log.info("Retrieving nearby departures...");
-        var stops = stopsService.stops(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance)).getStops();
+        Set<Stop> stops = stopsService.stops(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance)).getStops();
         if (stops.size() == 0) {
             return new HashSet<>(); // No stops nearby, return immediately
         }
 
         //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
         //cross join routeTypes and stops
-        var routeTypeStops = stops.stream().flatMap(stop ->
+        Set<ImmutablePair<Stop, Integer>> routeTypeStops = stops.stream().flatMap(stop ->
                 (IntStream.of(0, 1, 2, 3, 4)).mapToObj(routeType -> new ImmutablePair<>(stop, routeType)))
-                    .collect(Collectors.toSet());
+                .collect(Collectors.toSet());
 
-        var nearbyDepartures = new HashSet<DepartureDAO>();
-        var utcNow = Instant.now();
+        HashSet<DepartureDAO> nearbyDepartures = new HashSet<DepartureDAO>();
+        Instant utcNow = Instant.now();
 
         routeTypeStops.parallelStream().forEach(stop -> {
 //            log.info("RouteType = " + stop.right);
 //            log.info("Stop Id = " + stop.left.getStopId());
-            var departures = departureService.departures(stop.right, stop.left.getStopId(),
-                    devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStopId()))
+            Set<Departure> departures = departureService.departures(stop.right, stop.left.getStop_id(),
+                    devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))
                     .getDepartures()
                     //only return departures from NOW until the next few hours <nextHours> - defaults to 3
                     .stream().filter(dep ->
-                            dep.getScheduledDepartureUTC().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
-                            && dep.getScheduledDepartureUTC().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
+                            dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
+                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
                     .collect(Collectors.toSet());
 
             if (!departures.isEmpty()) {
-                var nearby = departures.stream().map(dep -> {
-                    var route = getRouteById(dep.getRouteId());
-                    var direction = getDirectionById(dep.getDirectionId(), dep.getRouteId(), stop.right);
+                Set<DepartureDAO> nearby = departures.stream().map(dep -> {
+                    Route route = getRouteById(dep.getRoute_id());
+                    Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.right);
 
                     return new DepartureDAO(
                             getRoutTypeName(stop.right),
-                            route.getRouteName(),
-                            route.getRouteNumber(),
-                            direction.getDirectionName(),
-                            stop.left.getStopName(),
-                            dep.getScheduledDepartureUTC().toString(),
-                            dep.getAtPlatform(),
-                            dep.getEstimatedDepartureUTC() == null ? null : dep.getEstimatedDepartureUTC().toString(),
-                            dep.getPlatformNumber() == null ? null : dep.getPlatformNumber().toString(),
-                            dep.getRouteId(),
-                            dep.getStopId(),
-                            dep.getRunId(),
-                            dep.getDirectionId()
+                            route.getRoute_name(),
+                            route.getRoute_number(),
+                            direction.getDirection_name(),
+                            stop.left.getStop_name(),
+                            dep.getScheduled_departure_utc().toString(),
+                            dep.getAt_platform(),
+                            dep.getEstimated_departure_utc() == null ? null : dep.getEstimated_departure_utc().toString(),
+                            dep.getPlatform_number() == null ? null : dep.getPlatform_number().toString(),
+                            dep.getRoute_id(),
+                            dep.getStop_id(),
+                            dep.getRun_id(),
+                            dep.getDirection_id()
                     );
                 }).collect(Collectors.toSet());
                 nearbyDepartures.addAll(nearby);
@@ -189,7 +192,7 @@ public class DepartureResource {
                     && localRoutesCacheAge.get(routeId).isBefore(Instant.now().plus(maxCacheAgeHour, ChronoUnit.HOURS))) {
                 return localRoutesCache.get(routeId);
             }
-            var route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId)).getRoute();
+            Route route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId)).getRoute();
             localRoutesCache.put(routeId, route);
             localRoutesCacheAge.put(routeId, Instant.now());
             return route;
@@ -205,7 +208,7 @@ public class DepartureResource {
     }
 
     private Direction getDirectionById(int directionId, int routeId, int routeType) {
-        var cacheKey = String.format("%s-%s-%s", directionId, routeId, routeType);
+        String cacheKey = String.format("%s-%s-%s", directionId, routeId, routeType);
 
         // use local in-memory cache instead of infinispan
         if (!enableCache) {
@@ -214,8 +217,8 @@ public class DepartureResource {
                 return localDirectionsCache.get(cacheKey);
             }
 
-            var direction = directionService.directions(routeId, devid, signature.generate("/v3/directions/route/" + routeId))
-                    .getDirections().stream().filter(d -> d.getDirectionId() == directionId && d.getRouteType() == routeType)
+            Direction direction = directionService.directions(routeId, devid, signature.generate("/v3/directions/route/" + routeId))
+                    .getDirections().stream().filter(d -> d.getDirection_id() == directionId && d.getRoute_type() == routeType)
                     .findFirst().get();
             localDirectionsCache.put(cacheKey, direction);
             localDirectionsCacheAge.put(cacheKey, Instant.now());
@@ -226,9 +229,9 @@ public class DepartureResource {
         if (directionsCache.containsKey((cacheKey))) {
             return directionsCache.get(cacheKey);
         }
-        var directions = directionService.directions(routeId, devid, signature.generate("/v3/directions/route/" + routeId))
+        Set<Direction> directions = directionService.directions(routeId, devid, signature.generate("/v3/directions/route/" + routeId))
                 .getDirections();
-        var direction = directions.stream().filter(d -> d.getDirectionId() == directionId && d.getRouteType() == routeType)
+        Direction direction = directions.stream().filter(d -> d.getDirection_id() == directionId && d.getRoute_type() == routeType)
                 .findFirst().get();
 
         directionsCache.put(cacheKey, direction);

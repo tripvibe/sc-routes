@@ -3,81 +3,69 @@ package com.redhat.labs.tripvibe.models;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 
-import javax.json.bind.annotation.JsonbProperty;
-
 public class DepartureDAO {
 
-    @ProtoFactory
-    public DepartureDAO(String routeType, String routeName, String routeNumber, String direction, String stopName,
-                        String departureTime, Boolean atPlatform, String estimatedDepartureTime,
-                        String platformNumber, Integer routeID, Integer stopId, Integer runId, Integer directionId) {
-        this.routeType = routeType;
-        this.routeName = routeName;
-        this.routeNumber = routeNumber;
-        this.direction = direction;
-        this.stopName = stopName;
-        this.departureTime = departureTime;
-        this.atPlatform = atPlatform;
-        this.estimatedDepartureTime = estimatedDepartureTime;
-        this.platformNumber = platformNumber;
-        this.routeId = routeID;
-        this.stopId = stopId;
-        this.runId = runId;
-        this.directionId = directionId;
+    private String route_name;
+    private String route_number;
+    private String direction;
+    private String stop_name;
+    private String departure_time;
+    private String route_type;
+    private Boolean at_platform;
+    private String estimated_departure_time;
+    private String platform_number;
+    private Integer route_id;
+    private Integer stop_id;
+    private Integer run_id;
+    private Integer direction_id;
+
+    public DepartureDAO() {
     }
 
-    @JsonbProperty("route_name")
-    private String routeName;
-    @JsonbProperty("route_number")
-    private String routeNumber;
-    @JsonbProperty("direction")
-    private String direction;
-    @JsonbProperty("stop_name")
-    private String stopName;
-    @JsonbProperty("departure_time")
-    private String departureTime;
-    @JsonbProperty("route_type")
-    private String routeType;
-    @JsonbProperty("at_platform")
-    private Boolean atPlatform;
-    @JsonbProperty("estimated_departure_time")
-    private String estimatedDepartureTime;
-    @JsonbProperty("platform_number")
-    private String platformNumber;
-    @JsonbProperty("route_id")
-    private Integer routeId;
-    @JsonbProperty("stop_id")
-    private Integer stopId;
-    @JsonbProperty("run_id")
-    private Integer runId;
-    @JsonbProperty("direction_id")
-    private Integer directionId;
+    @ProtoFactory
+    public DepartureDAO(String route_type, String route_name, String route_number, String direction, String stop_name,
+                        String departure_time, Boolean at_platform, String estimated_departure_time,
+                        String platform_number, Integer route_id, Integer stop_id, Integer run_id, Integer direction_id) {
+        this.route_type = route_type;
+        this.route_name = route_name;
+        this.route_number = route_number;
+        this.direction = direction;
+        this.stop_name = stop_name;
+        this.departure_time = departure_time;
+        this.at_platform = at_platform;
+        this.estimated_departure_time = estimated_departure_time;
+        this.platform_number = platform_number;
+        this.route_id = route_id;
+        this.stop_id = stop_id;
+        this.run_id = run_id;
+        this.direction_id = direction_id;
+    }
 
     @ProtoField(number = 1)
-    public String getRouteType() {
-        return routeType;
+    public String getRoute_type() {
+        return route_type;
     }
 
-    public void setRouteType(String routeType) {
-        this.routeType = routeType;
+    public void setRoute_type(String route_type) {
+        this.route_type = route_type;
     }
 
     @ProtoField(number = 2)
-    public String getRouteName() {
-        return routeName;
+    public String getRoute_name() {
+        return route_name;
     }
 
-    public void setRouteName(String routeName) {
-        this.routeName = routeName;
+    public void setRoute_name(String route_name) {
+        this.route_name = route_name;
     }
 
     @ProtoField(number = 3)
-    public String getRouteNumber() {
-        return routeNumber;
+    public String getRoute_number() {
+        return route_number;
     }
 
-    public void setRouteNumber(String routeNumber) {
-        this.routeNumber = routeNumber;
+    public void setRoute_number(String route_number) {
+        this.route_number = route_number;
     }
 
     @ProtoField(number = 4)
@@ -90,83 +78,82 @@ public class DepartureDAO {
     }
 
     @ProtoField(number = 5)
-    public String getStopName() {
-        return stopName;
+    public String getStop_name() {
+        return stop_name;
     }
 
-    public void setStopName(String stopName) {
-        this.stopName = stopName;
+    public void setStop_name(String stop_name) {
+        this.stop_name = stop_name;
     }
 
     @ProtoField(number = 6)
-    public String getDepartureTime() {
-        return departureTime;
+    public String getDeparture_time() {
+        return departure_time;
     }
 
-    public void setDepartureTime(String departureTime){ this.departureTime = departureTime; }
+    public void setDeparture_time(String departure_time){ this.departure_time = departure_time; }
 
     @ProtoField(number = 7)
-    public boolean isAtPlatform() {
-        return atPlatform;
+    public boolean getAt_platform() {
+        return at_platform;
     }
 
-    public void setAtPlatform(boolean atPlatform) {
-        this.atPlatform = atPlatform;
+    public void setAt_platform(boolean at_platform) {
+        this.at_platform = at_platform;
     }
 
     @ProtoField(number = 8)
-    public String getEstimatedDepartureTime() {
-        return estimatedDepartureTime;
+    public String getEstimated_departure_time() {
+        return estimated_departure_time;
     }
 
-    public void setEstimatedDepartureTime(String estimatedDepartureTime) {
-        this.estimatedDepartureTime = estimatedDepartureTime;
+    public void setEstimated_departure_time(String estimated_departure_time) {
+        this.estimated_departure_time = estimated_departure_time;
     }
 
     @ProtoField(number = 9)
-    public String getPlatformNumber() {
-        return platformNumber;
+    public String getPlatform_number() {
+        return platform_number;
     }
 
-    public void setPlatformNumber(String platformNumber) {
-        this.platformNumber = platformNumber;
+    public void setPlatform_number(String platform_number) {
+        this.platform_number = platform_number;
     }
 
     @ProtoField(number = 10)
-    public Integer getRouteId() {
-        return routeId;
+    public Integer getRoute_id() {
+        return route_id;
     }
 
-    public void setRouteId(Integer routeId) {
-        this.routeId = routeId;
+    public void setRoute_id(Integer route_id) {
+        this.route_id = route_id;
     }
 
     @ProtoField(number = 11)
-    public Integer getStopId() {
-        return stopId;
+    public Integer getStop_id() {
+        return stop_id;
     }
 
-    public void setStopId(Integer stopId) {
-        this.stopId = stopId;
+    public void setStop_id(Integer stop_id) {
+        this.stop_id = stop_id;
     }
 
     @ProtoField(number = 12)
-    public Integer getRunId() {
-        return runId;
+    public Integer getRun_id() {
+        return run_id;
     }
 
-    public void setRunId(Integer runId) {
-        this.runId = runId;
+    public void setRun_id(Integer run_id) {
+        this.run_id = run_id;
     }
 
     @ProtoField(number = 13)
-    public Integer getDirectionId() {
-        return directionId;
+    public Integer getDirection_id() {
+        return direction_id;
     }
 
-    public void setDirectionId(Integer directionId) {
-        this.directionId = directionId;
+    public void setDirection_id(Integer direction_id) {
+        this.direction_id = direction_id;
     }
 
-    public DepartureDAO() {}
 }

@@ -1,74 +1,70 @@
 package com.redhat.labs.tripvibe.models;
 
+import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
-
-import javax.json.bind.annotation.JsonbProperty;
 
 public class Direction {
 
+    private String route_direction_description;
+    private Integer direction_id;
+    private String direction_name;
+    private Integer route_id;
+    private Integer route_type;
 
-    @JsonbProperty("route_direction_description")
-    private String routeDirectionDescription;
-
-    @JsonbProperty("direction_id")
-    private Integer directionId;
-
-    @JsonbProperty("direction_name")
-    private String directionName;
-
-    @JsonbProperty("route_id")
-    private Integer routeId;
-
-    @JsonbProperty("route_type")
-    private Integer routeType;
-
-    public Direction(){}
-
-    public Direction(String routeDirectionDescription, Integer directionId, String directionName, Integer routeId, Integer routeType) {
-        this.routeDirectionDescription = routeDirectionDescription;
-        this.directionId = directionId;
-        this.directionName = directionName;
-        this.routeId = routeId;
-        this.routeType = routeType;
+    public Direction() {
     }
+
+    @ProtoFactory
+    public Direction(String route_direction_description, Integer direction_id, String direction_name, Integer route_id, Integer route_type) {
+        this.route_direction_description = route_direction_description;
+        this.direction_id = direction_id;
+        this.direction_name = direction_name;
+        this.route_id = route_id;
+        this.route_type = route_type;
+    }
+
     @ProtoField(number = 1)
-    public String getRouteDirectionDescription() {
-        return routeDirectionDescription;
+    public String getRoute_direction_description() {
+        return route_direction_description;
     }
 
-    public void setRouteDirectionDescription(String routeDirectionDescription) {
-        this.routeDirectionDescription = routeDirectionDescription;
+    public void setRoute_direction_description(String route_direction_description) {
+        this.route_direction_description = route_direction_description;
     }
+
     @ProtoField(number = 2)
-    public Integer getDirectionId() {
-        return directionId;
+    public Integer getDirection_id() {
+        return direction_id;
     }
 
-    public void setDirectionId(Integer directionId) {
-        this.directionId = directionId;
+    public void setDirection_id(Integer direction_id) {
+        this.direction_id = direction_id;
     }
+
     @ProtoField(number = 3)
-    public String getDirectionName() {
-        return directionName;
+    public String getDirection_name() {
+        return direction_name;
     }
 
-    public void setDirectionName(String directionName) {
-        this.directionName = directionName;
+    public void setDirection_name(String direction_name) {
+        this.direction_name = direction_name;
     }
+
     @ProtoField(number = 4)
-    public Integer getRouteId() {
-        return routeId;
+    public Integer getRoute_id() {
+        return route_id;
     }
 
-    public void setRouteId(Integer routeId) {
-        this.routeId = routeId;
+    public void setRoute_id(Integer route_id) {
+        this.route_id = route_id;
     }
+
     @ProtoField(number = 5)
-    public Integer getRouteType() {
-        return routeType;
+    public Integer getRoute_type() {
+        return route_type;
     }
 
-    public void setRouteType(Integer routeType) {
-        this.routeType = routeType;
+    public void setRoute_type(Integer route_type) {
+        this.route_type = route_type;
     }
 }
