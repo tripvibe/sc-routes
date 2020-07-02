@@ -5,20 +5,18 @@ import org.infinispan.protostream.annotations.ProtoField;
 
 public class RouteDAO {
 
-    @Override
-    public String toString() {
-        return "RouteDAO{" +
-                "type='" + type + '\'' +
-                ", name='" + name + '\'' +
-                ", number='" + number + '\'' +
-                ", direction='" + direction + '\'' +
-                ", stopName='" + stopName + '\'' +
-                ", capacity=" + capacity +
-                ", vibe=" + vibe +
-                ", departureTime='" + departureTime + '\'' +
-                ", direction_id='" + direction_id + '\'' +
-                ", route_id='" + route_id + '\'' +
-                '}';
+    private String type;
+    private String name;
+    private String number;
+    private String direction;
+    private String stopName;
+    private Double capacity;
+    private Double vibe;
+    private String departureTime;
+    private String direction_id;
+    private String route_id;
+
+    public RouteDAO() {
     }
 
     @ProtoFactory
@@ -34,17 +32,6 @@ public class RouteDAO {
         this.direction_id = direction_id;
         this.route_id = route_id;
     }
-
-    private String type;
-    private String name;
-    private String number;
-    private String direction;
-    private String stopName;
-    private Double capacity;
-    private Double vibe;
-    private String departureTime;
-    private String direction_id;
-    private String route_id;
 
     @ProtoField(number = 1)
     public String getType() {
@@ -134,6 +121,22 @@ public class RouteDAO {
 
     public void setRoute_id(String route_id) {
         this.route_id = route_id;
+    }
+
+    @Override
+    public String toString() {
+        return "RouteDAO{" +
+                "type='" + type + '\'' +
+                ", name='" + name + '\'' +
+                ", number='" + number + '\'' +
+                ", direction='" + direction + '\'' +
+                ", stopName='" + stopName + '\'' +
+                ", capacity=" + capacity +
+                ", vibe=" + vibe +
+                ", departureTime='" + departureTime + '\'' +
+                ", direction_id='" + direction_id + '\'' +
+                ", route_id='" + route_id + '\'' +
+                '}';
     }
 
 }

@@ -11,6 +11,9 @@ public class CacheKey implements Serializable {
     private String route_id;
     private String direction_id;
 
+    public CacheKey() {
+    }
+
     @ProtoFactory
     public CacheKey(String route_id, String direction_id) {
         this.route_id = route_id;

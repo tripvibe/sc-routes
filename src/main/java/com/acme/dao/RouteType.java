@@ -3,10 +3,15 @@ package com.acme.dao;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 
-public class RouteType {
+import java.io.Serializable;
+
+public class RouteType implements Serializable {
 
     private String route_type;
     private String route_type_name;
+
+    public RouteType() {
+    }
 
     @ProtoFactory
     public RouteType(final String route_type, final String route_type_name) {
