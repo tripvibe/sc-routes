@@ -2,11 +2,13 @@ package com.redhat.labs.tripvibe;
 
 import com.acme.rest.SubmitQueryService;
 import com.acme.util.Signature;
+
+import com.redhat.labs.tripvibe.models.DepartureDAO;
+import com.redhat.labs.tripvibe.models.Direction;
+import com.redhat.labs.tripvibe.models.Route;
+import com.redhat.labs.tripvibe.services.*;
 import com.redhat.labs.tripvibe.models.*;
-import com.redhat.labs.tripvibe.services.DepartureRestService;
-import com.redhat.labs.tripvibe.services.DirectionRestService;
-import com.redhat.labs.tripvibe.services.RouteRestService;
-import com.redhat.labs.tripvibe.services.StopRestService;
+
 import io.quarkus.infinispan.client.Remote;
 import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -28,13 +30,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -76,6 +77,8 @@ public class DepartureResource {
 
     @Inject
     @RestClient
+    SearchRestService searchService;
+
     SubmitQueryService submitQueryService;
 
     @Inject
@@ -114,6 +117,7 @@ public class DepartureResource {
 
         log.info("Retrieving nearby departures...");
         Set<Stop> stops = stopsService.stops(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance)).getStops();
+        log.info("Stops count : " + stops.size());
         if (stops.size() == 0) {
             return new HashSet<>(); // No stops nearby, return immediately
         }
@@ -132,25 +136,25 @@ public class DepartureResource {
 //            log.info("Stop Id = " + stop.left.getStopId());
             Set<Departure> departures = departureService.departures(stop.right, stop.left.getStop_id(),
                     devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))
-                    .getDepartures()
+                    .getDepartures().stream()
                     //only return departures from NOW until the next few hours <nextHours> - defaults to 3
-                    .stream().filter(dep ->
+                    .filter(dep ->
                             dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
                     .collect(Collectors.toSet());
 
+            log.info("Departures count : " + departures.size());
             if (!departures.isEmpty()) {
                 Set<TripVibeDAO> nearby = departures.stream().map(dep -> {
                     Route route = getRouteById(dep.getRoute_id());
                     Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.right);
-
                     return new TripVibeDAO(
-                            getRoutTypeName(stop.right),
                             route.getRoute_name(),
                             route.getRoute_number(),
                             direction.getDirection_name(),
                             stop.left.getStop_name(),
                             dep.getScheduled_departure_utc().toString(),
+                            getRoutTypeName(stop.right),
                             dep.getAt_platform(),
                             dep.getEstimated_departure_utc() == null ? null : dep.getEstimated_departure_utc().toString(),
                             dep.getPlatform_number() == null ? null : dep.getPlatform_number().toString(),
@@ -239,6 +243,70 @@ public class DepartureResource {
         return direction;
     }
 
+    @GET
+    @Path("/search-departures/{term}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<DepartureDAO> searchDepartures(@PathParam String term, @QueryParam int routeType) {
+
+        log.info("Retrieving departures by stop");
+        Set<Stop> stops = searchService.search(term, routeType, devid,
+                signature.generate("/v3/search/" + URLEncoder.encode(term, StandardCharsets.UTF_8) + "?route_types=" + routeType)).getStops();
+
+        log.info("Stops count : " + stops.size());
+        if (stops.size() == 0) {
+            return new HashSet<>(); // No stops nearby, return immediately
+        }
+
+        //final var rType = String.valueOf(routeType);
+        //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
+        //cross join routeTypes and stops
+        var routeTypeStops = stops.stream().map(stop -> new ImmutablePair<>(stop, routeType))
+                .collect(Collectors.toSet());
+
+        HashSet<DepartureDAO> nearbyDepartures = new HashSet<DepartureDAO>();
+        Instant utcNow = Instant.now();
+
+        routeTypeStops.parallelStream().forEach(stop -> {
+//            log.info("RouteType = " + stop.right);
+//            log.info("Stop Id = " + stop.left.getStopId());
+            Set<Departure> departures = departureService.departures(stop.right, stop.left.getStop_id(),
+                    devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))
+                    .getDepartures().stream()
+                    //only return departures from NOW until the next few hours <nextHours> - defaults to 3
+                    .filter(dep ->
+                            dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
+                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(1, ChronoUnit.HOURS)))
+                    .collect(Collectors.toSet());
+
+            log.info("Departure count: " + departures.size());
+            if (!departures.isEmpty()) {
+                Set<DepartureDAO> nearby = departures.stream().map(dep -> {
+                    Route route = getRouteById(dep.getRoute_id());
+                    Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.right);
+
+                    return new DepartureDAO(
+                            getRoutTypeName(stop.right),
+                            route.getRoute_name(),
+                            route.getRoute_number(),
+                            direction.getDirection_name(),
+                            stop.left.getStop_name(),
+                            dep.getScheduled_departure_utc().toString(),
+                            dep.getAt_platform(),
+                            dep.getEstimated_departure_utc() == null ? null : dep.getEstimated_departure_utc().toString(),
+                            dep.getPlatform_number() == null ? null : dep.getPlatform_number().toString(),
+                            dep.getRoute_id(),
+                            dep.getStop_id(),
+                            dep.getRun_id(),
+                            dep.getDirection_id()
+                    );
+                }).collect(Collectors.toSet());
+                nearbyDepartures.addAll(nearby);
+            }
+        });
+
+        return nearbyDepartures;
+    }
+
     private Double capacityAverage(String route_id) {
         Double cap = -1.0;
         try {
@@ -276,5 +344,4 @@ public class DepartureResource {
         }
         return vib;
     }
-
 }
