@@ -1,5 +1,6 @@
 package com.redhat.labs.tripvibe;
 
+import com.acme.rest.SubmitQueryService;
 import com.acme.util.Signature;
 import com.redhat.labs.tripvibe.models.*;
 import com.redhat.labs.tripvibe.services.DepartureRestService;
@@ -23,10 +24,13 @@ import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -41,13 +45,20 @@ import java.util.stream.IntStream;
 @ApplicationScoped
 public class DepartureResource {
 
+    private final Logger log = LoggerFactory.getLogger(DepartureResource.class);
+
+    @ConfigProperty(name = "com.acme.developerId")
+    public String devid;
+
     public static Map<Integer, Route> localRoutesCache = new HashMap<>();
     public static Map<Integer, Instant> localRoutesCacheAge = new HashMap<>();
     public static Map<String, Direction> localDirectionsCache = new HashMap<>();
     public static Map<String, Instant> localDirectionsCacheAge = new HashMap<>();
     private Integer maxCacheAgeHour = 24; //keep the cached objects upto 24 hours
 
-    private final Logger log = LoggerFactory.getLogger(DepartureResource.class);
+    // default to next 3 hours
+    // use to retrieve departures for the next 3 hours
+    private int nextHours = 3;
 
     @Inject
     @RestClient
@@ -65,8 +76,9 @@ public class DepartureResource {
     @RestClient
     DirectionRestService directionService;
 
-    @ConfigProperty(name = "com.acme.developerId")
-    public String devid;
+    @Inject
+    @RestClient
+    SubmitQueryService submitQueryService;
 
     @Inject
     Signature signature;
@@ -85,10 +97,6 @@ public class DepartureResource {
     @Remote("directionsCache")
     RemoteCache<String, Direction> directionsCache;
 
-    // default to next 3 hours
-    // use to retrieve departures for the next 3 hours
-    private int nextHours = 3;
-
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
 
         if (!enableCache) return;
@@ -102,7 +110,7 @@ public class DepartureResource {
     @GET
     @Path("/nearby-departures/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<DepartureDAO> getNearbyDepartures(@PathParam String latlong, @PathParam String distance, @QueryParam Integer nextHours) {
+    public Set<TripVibeDAO> getNearbyDepartures(@PathParam String latlong, @PathParam String distance, @QueryParam Integer nextHours) {
 
         if (nextHours != null) this.nextHours = nextHours;
 
@@ -118,7 +126,7 @@ public class DepartureResource {
                 (IntStream.of(0, 1, 2, 3, 4)).mapToObj(routeType -> new ImmutablePair<>(stop, routeType)))
                 .collect(Collectors.toSet());
 
-        HashSet<DepartureDAO> nearbyDepartures = new HashSet<DepartureDAO>();
+        HashSet<TripVibeDAO> nearbyDepartures = new HashSet<TripVibeDAO>();
         Instant utcNow = Instant.now();
 
         routeTypeStops.parallelStream().forEach(stop -> {
@@ -134,11 +142,11 @@ public class DepartureResource {
                     .collect(Collectors.toSet());
 
             if (!departures.isEmpty()) {
-                Set<DepartureDAO> nearby = departures.stream().map(dep -> {
+                Set<TripVibeDAO> nearby = departures.stream().map(dep -> {
                     Route route = getRouteById(dep.getRoute_id());
                     Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.right);
 
-                    return new DepartureDAO(
+                    return new TripVibeDAO(
                             getRoutTypeName(stop.right),
                             route.getRoute_name(),
                             route.getRoute_number(),
@@ -151,8 +159,9 @@ public class DepartureResource {
                             dep.getRoute_id(),
                             dep.getStop_id(),
                             dep.getRun_id(),
-                            dep.getDirection_id()
-                    );
+                            dep.getDirection_id(),
+                            capacityAverage(dep.getRoute_id().toString()),
+                            vibeAverage(dep.getRoute_id().toString()));
                 }).collect(Collectors.toSet());
                 nearbyDepartures.addAll(nearby);
             }
@@ -162,7 +171,7 @@ public class DepartureResource {
     }
 
     // this will not change in a decade
-    private String getRoutTypeName(int type){
+    private String getRoutTypeName(int type) {
         switch (type) {
             case 0:
                 return "Train";
@@ -197,7 +206,7 @@ public class DepartureResource {
         }
 
         Route route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId)).getRoute();
-        routesCache.put(routeId, route, 3600*12, TimeUnit.SECONDS);
+        routesCache.put(routeId, route, 3600 * 12, TimeUnit.SECONDS);
         return route;
     }
 
@@ -207,7 +216,7 @@ public class DepartureResource {
         // use local in-memory cache instead of infinispan
         if (!enableCache) {
             if (localDirectionsCache.containsKey(cacheKey) && localDirectionsCacheAge.containsKey(cacheKey)
-                && localDirectionsCacheAge.get(cacheKey).isBefore(Instant.now().plus(maxCacheAgeHour, ChronoUnit.HOURS))){
+                    && localDirectionsCacheAge.get(cacheKey).isBefore(Instant.now().plus(maxCacheAgeHour, ChronoUnit.HOURS))) {
                 return localDirectionsCache.get(cacheKey);
             }
 
@@ -231,4 +240,43 @@ public class DepartureResource {
         directionsCache.put(cacheKey, direction);
         return direction;
     }
+
+    private Double capacityAverage(String route_id) {
+        Double cap = -1.0;
+        try {
+            Double ret = submitQueryService.capacityAverage(route_id);
+            if (null != ret) cap = ret;
+        } catch (javax.ws.rs.WebApplicationException e) {
+            if (e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()
+                    || e.getResponse().getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
+                // OK nothing collected yet, return default
+                log.debug("capacityAverage - nothing found: " + e.getResponse().getStatus());
+            } else {
+                log.error("capacityAverage - something went wrong " + e);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return cap;
+    }
+
+    private Double vibeAverage(String route_id) {
+        Double vib = -1.0;
+        try {
+            Double ret = submitQueryService.vibeAverage(route_id);
+            if (null != ret) vib = ret;
+        } catch (javax.ws.rs.WebApplicationException e) {
+            if (e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()
+                    || e.getResponse().getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
+                // OK nothing collected yet, return default
+                log.debug("vibeAverage - nothing found: " + e.getResponse().getStatus());
+            } else {
+                log.error("vibeAverage - something went wrong " + e);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return vib;
+    }
+
 }
