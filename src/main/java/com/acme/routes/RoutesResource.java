@@ -402,7 +402,7 @@ public class RoutesResource {
                 log.error("capacityAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.debug(ex.getMessage());
         }
         return cap;
     }
@@ -421,7 +421,7 @@ public class RoutesResource {
                 log.error("vibeAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.debug(ex.getMessage());
         }
         return vib;
     }

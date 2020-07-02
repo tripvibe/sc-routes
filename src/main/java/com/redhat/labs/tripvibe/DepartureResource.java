@@ -122,6 +122,9 @@ public class DepartureResource {
             return new HashSet<>(); // No stops nearby, return immediately
         }
 
+        log.info("Routes Cache contains " + routesCache.size() + " items ");
+        log.info("Directions Cache contains " + directionsCache.size() + " items ");
+
         //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
         //cross join routeTypes and stops
         Set<ImmutablePair<Stop, Integer>> routeTypeStops = stops.stream().flatMap(stop ->
@@ -257,6 +260,9 @@ public class DepartureResource {
             return new HashSet<>(); // No stops nearby, return immediately
         }
 
+        log.info("Routes Cache contains " + routesCache.size() + " items ");
+        log.info("Directions Cache contains " + directionsCache.size() + " items ");
+
         //final var rType = String.valueOf(routeType);
         //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
         //cross join routeTypes and stops
@@ -321,7 +327,7 @@ public class DepartureResource {
                 log.error("capacityAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.debug(ex.getMessage());
         }
         return cap;
     }
@@ -340,7 +346,7 @@ public class DepartureResource {
                 log.error("vibeAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.debug(ex.getMessage());
         }
         return vib;
     }

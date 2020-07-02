@@ -1,7 +1,10 @@
 package com.redhat.labs.tripvibe.models;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
 import java.util.Set;
 
+@RegisterForReflection
 public class SearchResponse extends Response {
 
     public SearchResponse() {
