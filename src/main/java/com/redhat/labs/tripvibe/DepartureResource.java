@@ -4,10 +4,7 @@ import com.acme.util.Signature;
 import com.redhat.labs.tripvibe.models.DepartureDAO;
 import com.redhat.labs.tripvibe.models.Direction;
 import com.redhat.labs.tripvibe.models.Route;
-import com.redhat.labs.tripvibe.services.DepartureRestService;
-import com.redhat.labs.tripvibe.services.DirectionRestService;
-import com.redhat.labs.tripvibe.services.RouteRestService;
-import com.redhat.labs.tripvibe.services.StopRestService;
+import com.redhat.labs.tripvibe.services.*;
 import io.quarkus.infinispan.client.Remote;
 import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -66,6 +63,10 @@ public class DepartureResource {
     @Inject
     @RestClient
     DirectionRestService directionService;
+
+    @Inject
+    @RestClient
+    SearchRestService searchRestService;
 
     @ConfigProperty(name = "com.acme.developerId")
     public String devid;
@@ -233,4 +234,10 @@ public class DepartureResource {
         directionsCache.put(cacheKey, direction);
         return direction;
     }
-}
+
+    @GET
+    @Path("/search-departures/{term}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<DepartureDAO> getNearbyDepartures(@PathParam String term, Integer routeType) {
+
+    }
