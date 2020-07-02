@@ -117,6 +117,7 @@ public class DepartureResource {
 
         log.info("Retrieving nearby departures...");
         Set<Stop> stops = stopsService.stops(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance)).getStops();
+        log.info("Stops count : " + stops.size());
         if (stops.size() == 0) {
             return new HashSet<>(); // No stops nearby, return immediately
         }
@@ -135,25 +136,25 @@ public class DepartureResource {
 //            log.info("Stop Id = " + stop.left.getStopId());
             Set<Departure> departures = departureService.departures(stop.right, stop.left.getStop_id(),
                     devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))
-                    .getDepartures()
+                    .getDepartures().stream()
                     //only return departures from NOW until the next few hours <nextHours> - defaults to 3
-                    .stream().filter(dep ->
+                    .filter(dep ->
                             dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
                     .collect(Collectors.toSet());
 
+            log.info("Departures count : " + departures.size());
             if (!departures.isEmpty()) {
                 Set<TripVibeDAO> nearby = departures.stream().map(dep -> {
                     Route route = getRouteById(dep.getRoute_id());
                     Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.right);
-
                     return new TripVibeDAO(
-                            getRoutTypeName(stop.right),
                             route.getRoute_name(),
                             route.getRoute_number(),
                             direction.getDirection_name(),
                             stop.left.getStop_name(),
                             dep.getScheduled_departure_utc().toString(),
+                            getRoutTypeName(stop.right),
                             dep.getAt_platform(),
                             dep.getEstimated_departure_utc() == null ? null : dep.getEstimated_departure_utc().toString(),
                             dep.getPlatform_number() == null ? null : dep.getPlatform_number().toString(),
@@ -274,9 +275,10 @@ public class DepartureResource {
                     //only return departures from NOW until the next few hours <nextHours> - defaults to 3
                     .stream().filter(dep ->
                             dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
-                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
+                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(1, ChronoUnit.HOURS)))
                     .collect(Collectors.toSet());
 
+            log.info("Departure count: " + departures.size());
             if (!departures.isEmpty()) {
                 Set<DepartureDAO> nearby = departures.stream().map(dep -> {
                     Route route = getRouteById(dep.getRoute_id());
