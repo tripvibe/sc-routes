@@ -31,7 +31,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -40,6 +42,12 @@ import java.util.stream.IntStream;
 @Path("/api")
 @ApplicationScoped
 public class DepartureResource {
+
+    public static Map<Integer, Route> localRoutesCache = new HashMap<>();
+    public static Map<Integer, Instant> localRoutesCacheAge = new HashMap<>();
+    public static Map<String, Direction> localDirectionsCache = new HashMap<>();
+    public static Map<String, Instant> localDirectionsCacheAge = new HashMap<>();
+    private Integer maxCacheAgeHour = 24; //keep the cached objects upto 24 hours
 
     private final Logger log = LoggerFactory.getLogger(DepartureResource.class);
 
@@ -68,11 +76,14 @@ public class DepartureResource {
     @Inject
     RemoteCacheManager cacheManager;
 
-    @Inject
+    @ConfigProperty(name = "com.acme.enableCache")
+    Boolean enableCache = false;
+
+    //@Inject
     @Remote("routesCache")
     RemoteCache<Integer, Route> routesCache;
 
-    @Inject
+    //@Inject
     @Remote("directionsCache")
     RemoteCache<String, Direction> directionsCache;
 
@@ -81,9 +92,12 @@ public class DepartureResource {
     private int nextHours = 3;
 
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
+
+        if (!enableCache) return;
+
         log.info("On start - get caches");
-        RemoteCache<Integer, Route> routes = cacheManager.administration().getOrCreateCache("routesCache", DefaultTemplate.REPL_ASYNC);
-        RemoteCache<String, Direction> directions = cacheManager.administration().getOrCreateCache("directionsCache", DefaultTemplate.REPL_ASYNC);
+        routesCache = cacheManager.administration().getOrCreateCache("routesCache", DefaultTemplate.REPL_ASYNC);
+        directionsCache = cacheManager.administration().getOrCreateCache("directionsCache", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 
@@ -109,7 +123,7 @@ public class DepartureResource {
         var nearbyDepartures = new HashSet<DepartureDAO>();
         var utcNow = Instant.now();
 
-        routeTypeStops.forEach(stop -> {
+        routeTypeStops.parallelStream().forEach(stop -> {
 //            log.info("RouteType = " + stop.right);
 //            log.info("Stop Id = " + stop.left.getStopId());
             var departures = departureService.departures(stop.right, stop.left.getStopId(),
@@ -168,6 +182,18 @@ public class DepartureResource {
     }
 
     private Route getRouteById(int routeId) {
+        //Use local in-memory cache
+        if (!enableCache) {
+            if (localRoutesCache.containsKey(routeId) && localRoutesCacheAge.containsKey(routeId)
+                    && localRoutesCacheAge.get(routeId).isBefore(Instant.now().plus(maxCacheAgeHour, ChronoUnit.HOURS))) {
+                return localRoutesCache.get(routeId);
+            }
+            var route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId)).getRoute();
+            localRoutesCache.put(routeId, route);
+            localRoutesCacheAge.put(routeId, Instant.now());
+            return route;
+        }
+
         if (routesCache.containsKey(routeId)) {
             return routesCache.get(routeId);
         }
@@ -179,6 +205,23 @@ public class DepartureResource {
 
     private Direction getDirectionById(int directionId, int routeId, int routeType) {
         var cacheKey = String.format("%s-%s-%s", directionId, routeId, routeType);
+
+        // use local in-memory cache instead of infinispan
+        if (!enableCache) {
+            if (localDirectionsCache.containsKey(cacheKey) && localDirectionsCacheAge.containsKey(cacheKey)
+                && localDirectionsCacheAge.get(cacheKey).isBefore(Instant.now().plus(maxCacheAgeHour, ChronoUnit.HOURS))){
+                return localDirectionsCache.get(cacheKey);
+            }
+
+            var direction = directionService.directions(routeId, devid, signature.generate("/v3/directions/route/" + routeId))
+                    .getDirections().stream().filter(d -> d.getDirectionId() == directionId && d.getRouteType() == routeType)
+                    .findFirst().get();
+            localDirectionsCache.put(cacheKey, direction);
+            localDirectionsCacheAge.put(cacheKey, Instant.now());
+            return direction;
+        }
+
+
         if (directionsCache.containsKey((cacheKey))) {
             return directionsCache.get(cacheKey);
         }
