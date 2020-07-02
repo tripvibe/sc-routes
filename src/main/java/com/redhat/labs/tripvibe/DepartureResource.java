@@ -24,8 +24,6 @@ import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
