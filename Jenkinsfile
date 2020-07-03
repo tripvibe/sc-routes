@@ -172,7 +172,7 @@ pipeline {
                        #     echo " 🏗 no deployment found - creating 🏗"
                        #     oc -n ${TARGET_NAMESPACE} new-app ${APP_NAME} --as-deployment-config
                        #     oc -n ${TARGET_NAMESPACE} set env --from=secret/${APP_NAME} dc/${APP_NAME}
-                       #     oc -n ${TARGET_NAMESPACE} set probe dc/${APP_NAME} --liveness --get-url=http://:8080/health --initial-delay-seconds=2 --timeout-seconds=1
+                       #     oc -n ${TARGET_NAMESPACE} set probe dc/${APP_NAME} --liveness --get-url=http://:8080/health --initial-delay-seconds=3 --timeout-seconds=1
                        #     oc -n ${TARGET_NAMESPACE} set probe dc/${APP_NAME} --readiness --get-url=http://:8080/health --initial-delay-seconds=5 --timeout-seconds=1
                        #     oc -n ${TARGET_NAMESPACE} scale dc/${APP_NAME} --replicas=2
                        #fi

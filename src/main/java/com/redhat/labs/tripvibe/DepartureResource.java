@@ -160,7 +160,7 @@ public class DepartureResource {
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
                     .collect(Collectors.toSet());
 
-            log.info("Departures count : " + departures.size());
+            log.debug("Departures count : " + departures.size());
             if (!departures.isEmpty()) {
                 Set<TripVibeDAO> nearby = departures.stream().map(dep -> {
                     Route route = getRouteById(dep.getRoute_id());
@@ -186,6 +186,7 @@ public class DepartureResource {
             }
         });
 
+        log.info("Nearby departures returning count: " + nearbyDepartures.size());
         return nearbyDepartures;
     }
 
