@@ -212,19 +212,19 @@ public class DepartureResource {
                     && localRoutesCacheAge.get(routeId).isBefore(Instant.now().plus(maxCacheAgeHour, ChronoUnit.HOURS))) {
                 return localRoutesCache.get(routeId);
             }
-            Route route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId));
-            localRoutesCache.put(routeId, route);
+            RouteResponse route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId));
+            localRoutesCache.put(routeId, route.route);
             localRoutesCacheAge.put(routeId, Instant.now());
-            return route;
+            return route.route;
         }
 
         if (routesCache.containsKey(routeId)) {
             return routesCache.get(routeId);
         }
 
-        Route route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId));
-        routesCache.put(routeId, route, 3600 * 12, TimeUnit.SECONDS);
-        return route;
+        RouteResponse route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId));
+        routesCache.put(routeId, route.route, 3600 * 12, TimeUnit.SECONDS);
+        return route.route;
     }
 
     private Direction getDirectionById(int directionId, int routeId, int routeType) {
