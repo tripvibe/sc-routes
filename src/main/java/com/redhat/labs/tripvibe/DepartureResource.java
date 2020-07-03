@@ -1,5 +1,6 @@
 package com.redhat.labs.tripvibe;
 
+import com.acme.dao.RouteType;
 import com.acme.rest.SubmitQueryService;
 import com.acme.util.Signature;
 
@@ -54,8 +55,6 @@ public class DepartureResource {
     public static Map<String, Direction> localDirectionsCache = new HashMap<>();
     public static Map<String, Instant> localDirectionsCacheAge = new HashMap<>();
     private Integer maxCacheAgeHour = 24; //keep the cached objects upto 24 hours
-
-    // default to next 3 hours
     // use to retrieve departures for the next 3 hours
     private int nextHours = 3;
 
@@ -79,6 +78,8 @@ public class DepartureResource {
     @RestClient
     SearchRestService searchService;
 
+    @Inject
+    @RestClient
     SubmitQueryService submitQueryService;
 
     @Inject
@@ -90,21 +91,29 @@ public class DepartureResource {
     @ConfigProperty(name = "com.acme.enableCache")
     Boolean enableCache = false;
 
-    //@Inject
+    @Inject
     @Remote("routesCache")
     RemoteCache<Integer, Route> routesCache;
 
-    //@Inject
+    @Inject
     @Remote("directionsCache")
     RemoteCache<String, Direction> directionsCache;
 
+    @Inject
+    @Remote("vibeCache")
+    RemoteCache<String, Double> vibeCache;
+
+    @Inject
+    @Remote("capacityCache")
+    RemoteCache<String, Double> capacityCache;
+
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
-
         if (!enableCache) return;
-
         log.info("On start - get caches");
-        routesCache = cacheManager.administration().getOrCreateCache("routesCache", DefaultTemplate.REPL_ASYNC);
-        directionsCache = cacheManager.administration().getOrCreateCache("directionsCache", DefaultTemplate.REPL_ASYNC);
+        cacheManager.administration().getOrCreateCache("routesCache", DefaultTemplate.REPL_ASYNC);
+        cacheManager.administration().getOrCreateCache("directionsCache", DefaultTemplate.REPL_ASYNC);
+        cacheManager.administration().getOrCreateCache("vibeCache", DefaultTemplate.REPL_ASYNC);
+        cacheManager.administration().getOrCreateCache("capacityCache", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 
@@ -124,6 +133,8 @@ public class DepartureResource {
 
         log.info("Routes Cache contains " + routesCache.size() + " items ");
         log.info("Directions Cache contains " + directionsCache.size() + " items ");
+        log.info("Vibe Cache contains " + vibeCache.size() + " items ");
+        log.info("Capacity Cache contains " + capacityCache.size() + " items ");
 
         //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
         //cross join routeTypes and stops
@@ -135,12 +146,9 @@ public class DepartureResource {
         Instant utcNow = Instant.now();
 
         routeTypeStops.parallelStream().forEach(stop -> {
-//            log.info("RouteType = " + stop.right);
-//            log.info("Stop Id = " + stop.left.getStopId());
             Set<Departure> departures = departureService.departures(stop.right, stop.left.getStop_id(),
                     devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))
                     .getDepartures().stream()
-                    //only return departures from NOW until the next few hours <nextHours> - defaults to 3
                     .filter(dep ->
                             dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
@@ -194,7 +202,6 @@ public class DepartureResource {
     }
 
     private Route getRouteById(int routeId) {
-        //Use local in-memory cache
         if (!enableCache) {
             if (localRoutesCache.containsKey(routeId) && localRoutesCacheAge.containsKey(routeId)
                     && localRoutesCacheAge.get(routeId).isBefore(Instant.now().plus(maxCacheAgeHour, ChronoUnit.HOURS))) {
@@ -217,8 +224,6 @@ public class DepartureResource {
 
     private Direction getDirectionById(int directionId, int routeId, int routeType) {
         String cacheKey = String.format("%s-%s-%s", directionId, routeId, routeType);
-
-        // use local in-memory cache instead of infinispan
         if (!enableCache) {
             if (localDirectionsCache.containsKey(cacheKey) && localDirectionsCacheAge.containsKey(cacheKey)
                     && localDirectionsCacheAge.get(cacheKey).isBefore(Instant.now().plus(maxCacheAgeHour, ChronoUnit.HOURS))) {
@@ -262,8 +267,9 @@ public class DepartureResource {
 
         log.info("Routes Cache contains " + routesCache.size() + " items ");
         log.info("Directions Cache contains " + directionsCache.size() + " items ");
+        log.info("Vibe Cache contains " + vibeCache.size() + " items ");
+        log.info("Capacity Cache contains " + capacityCache.size() + " items ");
 
-        //final var rType = String.valueOf(routeType);
         //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
         //cross join routeTypes and stops
         var routeTypeStops = stops.stream().map(stop -> new ImmutablePair<>(stop, routeType))
@@ -273,12 +279,9 @@ public class DepartureResource {
         Instant utcNow = Instant.now();
 
         routeTypeStops.parallelStream().forEach(stop -> {
-//            log.info("RouteType = " + stop.right);
-//            log.info("Stop Id = " + stop.left.getStopId());
             Set<Departure> departures = departureService.departures(stop.right, stop.left.getStop_id(),
                     devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))
                     .getDepartures().stream()
-                    //only return departures from NOW until the next few hours <nextHours> - defaults to 3
                     .filter(dep ->
                             dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(1, ChronoUnit.HOURS)))
@@ -315,6 +318,9 @@ public class DepartureResource {
 
     private Double capacityAverage(String route_id) {
         Double cap = -1.0;
+        if (capacityCache.containsKey(route_id)) {
+            return capacityCache.get(route_id);
+        }
         try {
             Double ret = submitQueryService.capacityAverage(route_id);
             if (null != ret) cap = ret;
@@ -329,11 +335,15 @@ public class DepartureResource {
         } catch (Exception ex) {
             log.debug(ex.getMessage());
         }
+        capacityCache.put(route_id, cap, 1200, TimeUnit.SECONDS);
         return cap;
     }
 
     private Double vibeAverage(String route_id) {
         Double vib = -1.0;
+        if (vibeCache.containsKey(route_id)) {
+            return vibeCache.get(route_id);
+        }
         try {
             Double ret = submitQueryService.vibeAverage(route_id);
             if (null != ret) vib = ret;
@@ -348,6 +358,7 @@ public class DepartureResource {
         } catch (Exception ex) {
             log.debug(ex.getMessage());
         }
+        vibeCache.put(route_id, vib, 1200, TimeUnit.SECONDS);
         return vib;
     }
 }
