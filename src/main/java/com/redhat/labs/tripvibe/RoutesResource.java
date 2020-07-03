@@ -1,8 +1,8 @@
 package com.redhat.labs.tripvibe;
 
-import com.redhat.labs.tripvibe.util.Signature;
 import com.redhat.labs.tripvibe.models.*;
 import com.redhat.labs.tripvibe.rest.*;
+import com.redhat.labs.tripvibe.util.Signature;
 import io.quarkus.infinispan.client.Remote;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
@@ -114,12 +114,11 @@ public class RoutesResource {
     @Remote("capacityCache")
     RemoteCache<String, Double> capacityCache;
 
-
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         log.info("On start - get caches");
-        RemoteCache<String, RouteType> routeType = cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
-        RemoteCache<String, RouteNameNumber> routeNameNumber = cacheManager.administration().getOrCreateCache("routeNameNumber", DefaultTemplate.REPL_ASYNC);
-        RemoteCache<String, DirectionName> directionName = cacheManager.administration().getOrCreateCache("directionName", DefaultTemplate.REPL_ASYNC);
+        cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
+        cacheManager.administration().getOrCreateCache("routeNameNumber", DefaultTemplate.REPL_ASYNC);
+        cacheManager.administration().getOrCreateCache("directionName", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 

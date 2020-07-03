@@ -1,14 +1,9 @@
 package com.redhat.labs.tripvibe;
 
-import com.redhat.labs.tripvibe.rest.SubmitQueryService;
-import com.redhat.labs.tripvibe.util.Signature;
-
-import com.redhat.labs.tripvibe.models.DepartureDAO;
-import com.redhat.labs.tripvibe.models.Direction;
-import com.redhat.labs.tripvibe.models.Route;
-import com.redhat.labs.tripvibe.services.*;
 import com.redhat.labs.tripvibe.models.*;
-
+import com.redhat.labs.tripvibe.rest.SubmitQueryService;
+import com.redhat.labs.tripvibe.services.*;
+import com.redhat.labs.tripvibe.util.Signature;
 import io.quarkus.infinispan.client.Remote;
 import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -33,7 +28,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
