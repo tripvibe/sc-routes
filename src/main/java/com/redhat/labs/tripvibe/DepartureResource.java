@@ -118,6 +118,15 @@ public class DepartureResource {
     }
 
     @GET
+    @Path("/evict-single/{route_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void evictSingle(@PathParam String route_id) {
+        log.info("Evicting vibe,capacity for: " + route_id);
+        vibeCache.remove(route_id);
+        capacityCache.remove(route_id);
+    }
+
+    @GET
     @Path("/nearby-departures/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
     public Set<TripVibeDAO> getNearbyDepartures(@PathParam String latlong, @PathParam String distance, @QueryParam Integer nextHours) {
