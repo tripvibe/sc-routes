@@ -1,8 +1,8 @@
 package com.redhat.labs.tripvibe.models;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
+import java.io.Serializable;
 
-public class Stop {
+public class Stop implements Serializable {
 
     private Double stop_distance;
     private String stop_suburb;

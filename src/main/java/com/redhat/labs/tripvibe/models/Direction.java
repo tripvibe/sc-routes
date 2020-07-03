@@ -1,9 +1,13 @@
 package com.redhat.labs.tripvibe.models;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 
-public class Direction {
+import java.io.Serializable;
+
+@RegisterForReflection
+public class Direction implements Serializable {
 
     private String route_direction_description;
     private Integer direction_id;

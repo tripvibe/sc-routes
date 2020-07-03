@@ -1,6 +1,8 @@
 package com.redhat.labs.tripvibe.models;
 
-public class ResponseStatus {
+import java.io.Serializable;
+
+public class ResponseStatus implements Serializable {
     private String version;
     private Integer health;
 

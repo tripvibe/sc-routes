@@ -3,6 +3,8 @@ package com.acme.routes;
 import com.acme.dao.*;
 import com.acme.rest.*;
 import com.acme.util.Signature;
+import com.redhat.labs.tripvibe.models.Direction;
+import com.redhat.labs.tripvibe.models.Route;
 import io.quarkus.infinispan.client.Remote;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
@@ -97,6 +99,23 @@ public class RoutesResource {
     @Inject
     @Remote("directionName")
     RemoteCache<String, DirectionName> directionNameCache;
+
+    @Inject
+    @Remote("routesCache")
+    RemoteCache<Integer, Route> routesCache;
+
+    @Inject
+    @Remote("directionsCache")
+    RemoteCache<String, Direction> directionsCache;
+
+    @Inject
+    @Remote("vibeCache")
+    RemoteCache<String, Double> vibeCache;
+
+    @Inject
+    @Remote("capacityCache")
+    RemoteCache<String, Double> capacityCache;
+
 
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         log.info("On start - get caches");
@@ -212,7 +231,7 @@ public class RoutesResource {
     @DELETE
     @Path("/clearcache")
     public void cleanCache() {
-        cleanupCaches(routeTypeCache, routeNameNumberCache, directionNameCache);
+        cleanupCaches(routeTypeCache, routeNameNumberCache, directionNameCache, routesCache, directionsCache, vibeCache, capacityCache);
     }
 
     @GET
@@ -360,13 +379,21 @@ public class RoutesResource {
         return dn;
     }
 
-    private void cleanupCaches(RemoteCache<String, RouteType> routeType, RemoteCache<String, RouteNameNumber> routeNameNumber, RemoteCache<String, DirectionName> directionName) {
+    private void cleanupCaches(RemoteCache<String, RouteType> routeType, RemoteCache<String, RouteNameNumber> routeNameNumber, RemoteCache<String, DirectionName> directionName, RemoteCache<Integer, Route> routesCache, RemoteCache<String, Direction> directionsCache, RemoteCache<String, Double> vibeCache, RemoteCache<String, Double> capcaityCache) {
         try {
             Uni.createFrom().item(routeType.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
             Uni.createFrom().item(routeNameNumber.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
             Uni.createFrom().item(directionName.clearAsync().get(10, TimeUnit.SECONDS))
+                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
+            Uni.createFrom().item(routesCache.clearAsync().get(10, TimeUnit.SECONDS))
+                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
+            Uni.createFrom().item(directionsCache.clearAsync().get(10, TimeUnit.SECONDS))
+                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
+            Uni.createFrom().item(vibeCache.clearAsync().get(10, TimeUnit.SECONDS))
+                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
+            Uni.createFrom().item(capcaityCache.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
         } catch (Exception e) {
             log.error("Something went wrong clearing data stores." + e);
@@ -387,7 +414,7 @@ public class RoutesResource {
                 log.error("capacityAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.debug(ex.getMessage());
         }
         return cap;
     }
@@ -406,7 +433,7 @@ public class RoutesResource {
                 log.error("vibeAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.debug(ex.getMessage());
         }
         return vib;
     }

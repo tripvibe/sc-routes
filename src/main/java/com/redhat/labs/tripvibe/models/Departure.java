@@ -1,8 +1,9 @@
 package com.redhat.labs.tripvibe.models;
 
+import java.io.Serializable;
 import java.time.Instant;
 
-public class Departure {
+public class Departure implements Serializable {
 
     private Integer stop_id;
     private Integer route_id;

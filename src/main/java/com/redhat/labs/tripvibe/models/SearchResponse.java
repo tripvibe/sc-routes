@@ -1,9 +1,15 @@
 package com.redhat.labs.tripvibe.models;
 
-import javax.json.bind.annotation.JsonbProperty;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
 import java.util.Set;
 
+@RegisterForReflection
 public class SearchResponse extends Response {
+
+    public SearchResponse() {
+    }
+
     public SearchResponse(Set<Stop> stops) {
         this.stops = stops;
     }
@@ -16,8 +22,6 @@ public class SearchResponse extends Response {
         this.stops = stops;
     }
 
-    @JsonbProperty("stops")
     private Set<Stop> stops;
 
-    public SearchResponse(){}
 }

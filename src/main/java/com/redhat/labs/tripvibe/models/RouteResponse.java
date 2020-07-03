@@ -1,5 +1,8 @@
 package com.redhat.labs.tripvibe.models;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class RouteResponse extends Response {
     private Route route;
 
