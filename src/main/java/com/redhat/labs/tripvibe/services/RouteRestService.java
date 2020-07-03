@@ -1,6 +1,6 @@
 package com.redhat.labs.tripvibe.services;
 
-import com.redhat.labs.tripvibe.models.RouteResponse;
+import com.redhat.labs.tripvibe.models.Route;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.jboss.resteasy.annotations.jaxrs.QueryParam;
@@ -15,6 +15,6 @@ public interface RouteRestService {
     @GET
     @Path("/{routeId}")
     @Produces(MediaType.APPLICATION_JSON)
-    RouteResponse route(@PathParam int routeId, @QueryParam("devid") String devid, @QueryParam("signature") String signature);
+    Route route(@PathParam int routeId, @QueryParam("devid") String devid, @QueryParam("signature") String signature);
 
 }

@@ -1,4 +1,4 @@
-package com.acme.rest;
+package com.redhat.labs.tripvibe.rest;
 
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;

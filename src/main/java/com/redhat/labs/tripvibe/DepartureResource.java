@@ -1,8 +1,7 @@
 package com.redhat.labs.tripvibe;
 
-import com.acme.dao.RouteType;
-import com.acme.rest.SubmitQueryService;
-import com.acme.util.Signature;
+import com.redhat.labs.tripvibe.rest.SubmitQueryService;
+import com.redhat.labs.tripvibe.util.Signature;
 
 import com.redhat.labs.tripvibe.models.DepartureDAO;
 import com.redhat.labs.tripvibe.models.Direction;
@@ -31,8 +30,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -47,7 +44,7 @@ public class DepartureResource {
 
     private final Logger log = LoggerFactory.getLogger(DepartureResource.class);
 
-    @ConfigProperty(name = "com.acme.developerId")
+    @ConfigProperty(name = "com.redhat.labs.tripvibe.developerId")
     public String devid;
 
     public static Map<Integer, Route> localRoutesCache = new HashMap<>();
@@ -88,7 +85,7 @@ public class DepartureResource {
     @Inject
     RemoteCacheManager cacheManager;
 
-    @ConfigProperty(name = "com.acme.enableCache")
+    @ConfigProperty(name = "com.redhat.labs.tripvibe.enableCache")
     Boolean enableCache = false;
 
     @Inject
@@ -216,7 +213,7 @@ public class DepartureResource {
                     && localRoutesCacheAge.get(routeId).isBefore(Instant.now().plus(maxCacheAgeHour, ChronoUnit.HOURS))) {
                 return localRoutesCache.get(routeId);
             }
-            Route route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId)).getRoute();
+            Route route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId));
             localRoutesCache.put(routeId, route);
             localRoutesCacheAge.put(routeId, Instant.now());
             return route;
@@ -226,7 +223,7 @@ public class DepartureResource {
             return routesCache.get(routeId);
         }
 
-        Route route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId)).getRoute();
+        Route route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId));
         routesCache.put(routeId, route, 3600 * 12, TimeUnit.SECONDS);
         return route;
     }

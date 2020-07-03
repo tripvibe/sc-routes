@@ -1,7 +1,6 @@
-package com.acme.rest;
+package com.redhat.labs.tripvibe.rest;
 
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
-import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.jboss.resteasy.annotations.jaxrs.QueryParam;
 
 import javax.ws.rs.GET;
@@ -10,11 +9,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 @RegisterRestClient
-public interface DirectionService {
+public interface RouteTypeService {
 
     @GET
-    @Path("/{route_id}")
+    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
-    String directions(@PathParam String route_id, @QueryParam("devid") String devid, @QueryParam("signature") String signature);
+    String routes(@QueryParam("devid") String devid, @QueryParam("signature") String signature);
 
 }

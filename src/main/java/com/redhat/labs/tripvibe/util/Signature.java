@@ -1,4 +1,4 @@
-package com.acme.util;
+package com.redhat.labs.tripvibe.util;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -12,10 +12,10 @@ import java.security.NoSuchAlgorithmException;
 @ApplicationScoped
 public class Signature {
 
-    @ConfigProperty(name = "com.acme.developerId")
+    @ConfigProperty(name = "com.redhat.labs.tripvibe.developerId")
     public String developerId;
 
-    @ConfigProperty(name = "com.acme.privateKey")
+    @ConfigProperty(name = "com.redhat.labs.tripvibe.privateKey")
     public String privateKey;
 
     @ConfigProperty(name = "baseURL", defaultValue = "https://timetableapi.ptv.vic.gov.au")

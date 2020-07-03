@@ -1,10 +1,8 @@
-package com.acme.routes;
+package com.redhat.labs.tripvibe;
 
-import com.acme.dao.*;
-import com.acme.rest.*;
-import com.acme.util.Signature;
-import com.redhat.labs.tripvibe.models.Direction;
-import com.redhat.labs.tripvibe.models.Route;
+import com.redhat.labs.tripvibe.util.Signature;
+import com.redhat.labs.tripvibe.models.*;
+import com.redhat.labs.tripvibe.rest.*;
 import io.quarkus.infinispan.client.Remote;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
@@ -48,10 +46,10 @@ public class RoutesResource {
 
     private final Logger log = LoggerFactory.getLogger(RoutesResource.class);
 
-    @ConfigProperty(name = "com.acme.developerId")
+    @ConfigProperty(name = "com.redhat.labs.tripvibe.developerId")
     public String devid;
 
-    @ConfigProperty(name = "com.acme.isMock")
+    @ConfigProperty(name = "com.redhat.labs.tripvibe.isMock")
     public boolean isMock;
 
     @Inject
@@ -262,7 +260,7 @@ public class RoutesResource {
             _sn.put(_stop.optString("stop_id"), _stop.optString("stop_name"));
         }
 
-        HashSet<Departure> dhs = new HashSet<>();
+        HashSet<DepartureCache> dhs = new HashSet<>();
         HashSet<CacheKey> cks = new HashSet<>();
 
         log.info("RouteType Cache contains " + routeTypeCache.size() + " items ");
@@ -288,9 +286,9 @@ public class RoutesResource {
                         String scheduled_departure_utc = isMock ? getDepartureTimeMock() : _deps.optString("scheduled_departure_utc");
 
                         // remove duplicates
-                        Departure departure = new Departure(route_type, stop_id, direction_id, scheduled_departure_utc);
-                        if (dhs.contains(departure)) return;
-                        dhs.add(departure);
+                        DepartureCache departureCache = new DepartureCache(route_type, stop_id, direction_id, scheduled_departure_utc);
+                        if (dhs.contains(departureCache)) return;
+                        dhs.add(departureCache);
 
                         try {
                             CacheKey _key = new CacheKey(k, v);

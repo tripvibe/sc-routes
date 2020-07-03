@@ -1,15 +1,15 @@
-package com.acme.dao;
+package com.redhat.labs.tripvibe.models;
 
 import java.util.Objects;
 
-public class Departure {
+public class DepartureCache {
 
     private String route_type;
     private String stop_id;
     private String direction_id;
     private String scheduled_departure_utc;
 
-    public Departure(String route_type, String stop_id, String direction_id, String scheduled_departure_utc) {
+    public DepartureCache(String route_type, String stop_id, String direction_id, String scheduled_departure_utc) {
         this.route_type = route_type;
         this.stop_id = stop_id;
         this.direction_id = direction_id;
@@ -52,11 +52,11 @@ public class Departure {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Departure departure = (Departure) o;
-        return Objects.equals(route_type, departure.route_type) &&
-                Objects.equals(stop_id, departure.stop_id) &&
-                Objects.equals(direction_id, departure.direction_id) &&
-                Objects.equals(scheduled_departure_utc, departure.scheduled_departure_utc);
+        DepartureCache departureCache = (DepartureCache) o;
+        return Objects.equals(route_type, departureCache.route_type) &&
+                Objects.equals(stop_id, departureCache.stop_id) &&
+                Objects.equals(direction_id, departureCache.direction_id) &&
+                Objects.equals(scheduled_departure_utc, departureCache.scheduled_departure_utc);
     }
 
     @Override
