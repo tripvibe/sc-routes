@@ -248,7 +248,7 @@ public class DepartureResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Set<DepartureDAO> searchDepartures(@PathParam String term, @QueryParam int routeType) {
 
-        log.info("Retrieving departures by stop");
+        log.info("Retrieving departures by stop using keyword: " + term);
         Set<Stop> stops = searchService.search(term, routeType, devid,
                 signature.generate("/v3/search/" + URLEncoder.encode(term, StandardCharsets.UTF_8) + "?route_types=" + routeType)).getStops();
 
