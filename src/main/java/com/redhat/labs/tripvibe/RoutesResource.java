@@ -114,6 +114,14 @@ public class RoutesResource {
     @Remote("capacityCache")
     RemoteCache<String, Double> capacityCache;
 
+    @Inject
+    @Remote("stopsCache")
+    RemoteCache<LatLongDistCacheKey, Set<Stop>> stopsCache;
+
+    @Inject
+    @Remote("searchCache")
+    RemoteCache<String, Set<Stop>> searchCache;
+
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         log.info("On start - get caches");
         cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
@@ -228,7 +236,7 @@ public class RoutesResource {
     @DELETE
     @Path("/clearcache")
     public void cleanCache() {
-        cleanupCaches(routeTypeCache, routeNameNumberCache, directionNameCache, routesCache, directionsCache, vibeCache, capacityCache);
+        cleanupCaches(routeTypeCache, routeNameNumberCache, directionNameCache, routesCache, directionsCache, vibeCache, capacityCache, stopsCache, searchCache);
     }
 
     @GET
@@ -260,7 +268,7 @@ public class RoutesResource {
         }
 
         HashSet<DepartureCache> dhs = new HashSet<>();
-        HashSet<CacheKey> cks = new HashSet<>();
+        HashSet<RouteDirectionCacheKey> cks = new HashSet<>();
 
         log.info("RouteType Cache contains " + routeTypeCache.size() + " items ");
         log.info("RouteNameNumber Cache contains " + routeNameNumberCache.size() + " items ");
@@ -290,7 +298,7 @@ public class RoutesResource {
                         dhs.add(departureCache);
 
                         try {
-                            CacheKey _key = new CacheKey(k, v);
+                            RouteDirectionCacheKey _key = new RouteDirectionCacheKey(k, v);
                             // remove duplicates
                             if (cks.contains(_key)) return;
                             cks.add(_key);
@@ -376,7 +384,7 @@ public class RoutesResource {
         return dn;
     }
 
-    private void cleanupCaches(RemoteCache<String, RouteType> routeType, RemoteCache<String, RouteNameNumber> routeNameNumber, RemoteCache<String, DirectionName> directionName, RemoteCache<Integer, Route> routesCache, RemoteCache<String, Direction> directionsCache, RemoteCache<String, Double> vibeCache, RemoteCache<String, Double> capcaityCache) {
+    private void cleanupCaches(RemoteCache<String, RouteType> routeType, RemoteCache<String, RouteNameNumber> routeNameNumber, RemoteCache<String, DirectionName> directionName, RemoteCache<Integer, Route> routesCache, RemoteCache<String, Direction> directionsCache, RemoteCache<String, Double> vibeCache, RemoteCache<String, Double> capacityCache, RemoteCache<LatLongDistCacheKey, Set<Stop>> stopsCache, RemoteCache<String, Set<Stop>> searchCache) {
         try {
             Uni.createFrom().item(routeType.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
@@ -390,7 +398,11 @@ public class RoutesResource {
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
             Uni.createFrom().item(vibeCache.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
-            Uni.createFrom().item(capcaityCache.clearAsync().get(10, TimeUnit.SECONDS))
+            Uni.createFrom().item(capacityCache.clearAsync().get(10, TimeUnit.SECONDS))
+                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
+            Uni.createFrom().item(stopsCache.clearAsync().get(10, TimeUnit.SECONDS))
+                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
+            Uni.createFrom().item(searchCache.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
         } catch (Exception e) {
             log.error("Something went wrong clearing data stores." + e);

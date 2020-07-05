@@ -1,7 +1,12 @@
 package com.redhat.labs.tripvibe.models;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+
 import java.io.Serializable;
 
+@RegisterForReflection
 public class Stop implements Serializable {
 
     private Double stop_distance;
@@ -16,6 +21,7 @@ public class Stop implements Serializable {
     public Stop() {
     }
 
+    @ProtoFactory
     public Stop(Double stop_distance, String stop_suburb, String stop_name, Integer stop_id, Integer route_type, Double stop_latitude, Double stop_longitude, Integer stop_sequence) {
         this.stop_distance = stop_distance;
         this.stop_suburb = stop_suburb;
@@ -27,6 +33,7 @@ public class Stop implements Serializable {
         this.stop_sequence = stop_sequence;
     }
 
+    @ProtoField(number = 1)
     public Double getStop_distance() {
         return stop_distance;
     }
@@ -35,6 +42,7 @@ public class Stop implements Serializable {
         this.stop_distance = stop_distance;
     }
 
+    @ProtoField(number = 2)
     public String getStop_suburb() {
         return stop_suburb;
     }
@@ -43,6 +51,7 @@ public class Stop implements Serializable {
         this.stop_suburb = stop_suburb;
     }
 
+    @ProtoField(number = 3)
     public String getStop_name() {
         return stop_name;
     }
@@ -51,6 +60,7 @@ public class Stop implements Serializable {
         this.stop_name = stop_name;
     }
 
+    @ProtoField(number = 4)
     public Integer getStop_id() {
         return stop_id;
     }
@@ -59,6 +69,7 @@ public class Stop implements Serializable {
         this.stop_id = stop_id;
     }
 
+    @ProtoField(number = 5)
     public Integer getRoute_type() {
         return route_type;
     }
@@ -67,6 +78,7 @@ public class Stop implements Serializable {
         this.route_type = route_type;
     }
 
+    @ProtoField(number = 6)
     public Double getStop_latitude() {
         return stop_latitude;
     }
@@ -75,6 +87,7 @@ public class Stop implements Serializable {
         this.stop_latitude = stop_latitude;
     }
 
+    @ProtoField(number = 7)
     public Double getStop_longitude() {
         return stop_longitude;
     }
@@ -83,6 +96,7 @@ public class Stop implements Serializable {
         this.stop_longitude = stop_longitude;
     }
 
+    @ProtoField(number = 8)
     public Integer getStop_sequence() {
         return stop_sequence;
     }

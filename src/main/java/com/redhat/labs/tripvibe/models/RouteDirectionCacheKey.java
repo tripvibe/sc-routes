@@ -6,16 +6,16 @@ import org.infinispan.protostream.annotations.ProtoField;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class CacheKey implements Serializable {
+public class RouteDirectionCacheKey implements Serializable {
 
     private String route_id;
     private String direction_id;
 
-    public CacheKey() {
+    public RouteDirectionCacheKey() {
     }
 
     @ProtoFactory
-    public CacheKey(String route_id, String direction_id) {
+    public RouteDirectionCacheKey(String route_id, String direction_id) {
         this.route_id = route_id;
         this.direction_id = direction_id;
     }
@@ -42,9 +42,9 @@ public class CacheKey implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        CacheKey cacheKey = (CacheKey) o;
-        return Objects.equals(route_id, cacheKey.route_id) &&
-                Objects.equals(direction_id, cacheKey.direction_id);
+        RouteDirectionCacheKey routeDirectionCacheKey = (RouteDirectionCacheKey) o;
+        return Objects.equals(route_id, routeDirectionCacheKey.route_id) &&
+                Objects.equals(direction_id, routeDirectionCacheKey.direction_id);
     }
 
     @Override

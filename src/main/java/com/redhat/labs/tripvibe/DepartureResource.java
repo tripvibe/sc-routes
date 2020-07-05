@@ -12,6 +12,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.infinispan.client.hotrod.DefaultTemplate;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.protostream.MessageMarshaller;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.jboss.resteasy.annotations.jaxrs.QueryParam;
 import org.slf4j.Logger;
@@ -102,6 +103,14 @@ public class DepartureResource {
     @Remote("capacityCache")
     RemoteCache<String, Double> capacityCache;
 
+    @Inject
+    @Remote("stopsCache")
+    RemoteCache<LatLongDistCacheKey, Stops> stopsCache;
+
+    @Inject
+    @Remote("searchCache")
+    RemoteCache<String, Stops> searchCache;
+
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         if (!enableCache) return;
         log.info("On start - get caches");
@@ -109,6 +118,8 @@ public class DepartureResource {
         cacheManager.administration().getOrCreateCache("directionsCache", DefaultTemplate.REPL_ASYNC);
         cacheManager.administration().getOrCreateCache("vibeCache", DefaultTemplate.REPL_ASYNC);
         cacheManager.administration().getOrCreateCache("capacityCache", DefaultTemplate.REPL_ASYNC);
+        cacheManager.administration().getOrCreateCache("stopsCache", DefaultTemplate.REPL_ASYNC);
+        cacheManager.administration().getOrCreateCache("searchCache", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 
@@ -129,20 +140,25 @@ public class DepartureResource {
         if (nextHours != null) this.nextHours = nextHours;
 
         log.info("Retrieving nearby departures...");
-        Set<Stop> stops = stopsService.stops(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance)).getStops();
-        log.info("Stops count : " + stops.size());
-        if (stops.size() == 0) {
+        LatLongDistCacheKey lldkey = new LatLongDistCacheKey(latlong, distance);
+        Stops stops = new Stops();
+        if (stopsCache.containsKey(lldkey)) {
+            stops = stopsCache.get(lldkey);
+        } else {
+            Set<Stop> st = stopsService.stops(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance)).getStops();
+            stops.setStops(st);
+        }
+        log.info("Stops count : " + stops.getStops().size());
+        if (stops.getStops().size() == 0) {
             return new HashSet<>(); // No stops nearby, return immediately
         }
+        stopsCache.put(lldkey, stops, 2, TimeUnit.HOURS);
 
-        log.info("Routes Cache contains " + routesCache.size() + " items ");
-        log.info("Directions Cache contains " + directionsCache.size() + " items ");
-        log.info("Vibe Cache contains " + vibeCache.size() + " items ");
-        log.info("Capacity Cache contains " + capacityCache.size() + " items ");
+        printCacheSizes();
 
         //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
         //cross join routeTypes and stops
-        Set<ImmutablePair<Stop, Integer>> routeTypeStops = stops.stream().flatMap(stop ->
+        Set<ImmutablePair<Stop, Integer>> routeTypeStops = stops.getStops().stream().flatMap(stop ->
                 (IntStream.of(0, 1, 2, 3, 4)).mapToObj(routeType -> new ImmutablePair<>(stop, routeType)))
                 .collect(Collectors.toSet());
 
@@ -263,22 +279,25 @@ public class DepartureResource {
 
         log.info("Retrieving departures by stop using keyword: " + term);
 
-        Set<Stop> stops = searchService.search(term, routeType, devid,
-                signature.generate("/v3/search/" + term.replace(" ","%20") + "?route_types=" + routeType)).getStops();
-
-        log.info("Stops count : " + stops.size());
-        if (stops.size() == 0) {
+        Stops stops = new Stops();
+        if (searchCache.containsKey(term)) {
+            stops = searchCache.get(term);
+        } else {
+            Set<Stop> st = searchService.search(term, routeType, devid,
+                    signature.generate("/v3/search/" + term.replace(" ", "%20") + "?route_types=" + routeType)).getStops();
+            stops.setStops(st);
+        }
+        log.info("Stops count : " + stops.getStops().size());
+        if (stops.getStops().size() == 0) {
             return new HashSet<>(); // No stops nearby, return immediately
         }
+        searchCache.put(term, stops, 2, TimeUnit.HOURS);
 
-        log.info("Routes Cache contains " + routesCache.size() + " items ");
-        log.info("Directions Cache contains " + directionsCache.size() + " items ");
-        log.info("Vibe Cache contains " + vibeCache.size() + " items ");
-        log.info("Capacity Cache contains " + capacityCache.size() + " items ");
+        printCacheSizes();
 
         //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
         //cross join routeTypes and stops
-        var routeTypeStops = stops.stream().map(stop -> new ImmutablePair<>(stop, routeType))
+        var routeTypeStops = stops.getStops().stream().map(stop -> new ImmutablePair<>(stop, routeType))
                 .collect(Collectors.toSet());
 
         HashSet<DepartureDAO> nearbyDepartures = new HashSet<DepartureDAO>();
@@ -293,7 +312,7 @@ public class DepartureResource {
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(1, ChronoUnit.HOURS)))
                     .collect(Collectors.toSet());
 
-            log.info("Departure count: " + departures.size());
+            log.debug("Departure count: " + departures.size());
             if (!departures.isEmpty()) {
                 Set<DepartureDAO> nearby = departures.stream().map(dep -> {
                     Route route = getRouteById(dep.getRoute_id());
@@ -319,6 +338,7 @@ public class DepartureResource {
             }
         });
 
+        log.info("Nearby departures returning count: " + nearbyDepartures.size());
         return nearbyDepartures;
     }
 
@@ -366,5 +386,13 @@ public class DepartureResource {
         }
         vibeCache.put(route_id, vib, 1200, TimeUnit.SECONDS);
         return vib;
+    }
+    private void printCacheSizes() {
+        log.info("Routes Cache contains " + routesCache.size() + " items ");
+        log.info("Directions Cache contains " + directionsCache.size() + " items ");
+        log.info("Vibe Cache contains " + vibeCache.size() + " items ");
+        log.info("Capacity Cache contains " + capacityCache.size() + " items ");
+        log.info("Stops Cache contains " + stopsCache.size() + " items ");
+        log.info("Search Cache contains " + searchCache.size() + " items ");
     }
 }
