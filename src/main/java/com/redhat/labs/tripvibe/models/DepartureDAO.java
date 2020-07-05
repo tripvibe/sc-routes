@@ -44,15 +44,6 @@ public class DepartureDAO implements Serializable {
     }
 
     @ProtoField(number = 1)
-    public String getRoute_type() {
-        return route_type;
-    }
-
-    public void setRoute_type(String route_type) {
-        this.route_type = route_type;
-    }
-
-    @ProtoField(number = 2)
     public String getRoute_name() {
         return route_name;
     }
@@ -61,7 +52,7 @@ public class DepartureDAO implements Serializable {
         this.route_name = route_name;
     }
 
-    @ProtoField(number = 3)
+    @ProtoField(number = 2)
     public String getRoute_number() {
         return route_number;
     }
@@ -70,7 +61,7 @@ public class DepartureDAO implements Serializable {
         this.route_number = route_number;
     }
 
-    @ProtoField(number = 4)
+    @ProtoField(number = 3)
     public String getDirection() {
         return direction;
     }
@@ -79,7 +70,7 @@ public class DepartureDAO implements Serializable {
         this.direction = direction;
     }
 
-    @ProtoField(number = 5)
+    @ProtoField(number = 4)
     public String getStop_name() {
         return stop_name;
     }
@@ -88,19 +79,30 @@ public class DepartureDAO implements Serializable {
         this.stop_name = stop_name;
     }
 
-    @ProtoField(number = 6)
+    @ProtoField(number = 5)
     public String getDeparture_time() {
         return departure_time;
     }
 
-    public void setDeparture_time(String departure_time){ this.departure_time = departure_time; }
+    public void setDeparture_time(String departure_time) {
+        this.departure_time = departure_time;
+    }
+
+    @ProtoField(number = 6)
+    public String getRoute_type() {
+        return route_type;
+    }
+
+    public void setRoute_type(String route_type) {
+        this.route_type = route_type;
+    }
 
     @ProtoField(number = 7)
-    public boolean getAt_platform() {
+    public Boolean getAt_platform() {
         return at_platform;
     }
 
-    public void setAt_platform(boolean at_platform) {
+    public void setAt_platform(Boolean at_platform) {
         this.at_platform = at_platform;
     }
 
@@ -157,5 +159,4 @@ public class DepartureDAO implements Serializable {
     public void setDirection_id(Integer direction_id) {
         this.direction_id = direction_id;
     }
-
 }

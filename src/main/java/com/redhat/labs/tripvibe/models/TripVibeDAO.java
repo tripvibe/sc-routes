@@ -1,5 +1,8 @@
 package com.redhat.labs.tripvibe.models;
 
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+
 import java.io.Serializable;
 
 public class TripVibeDAO implements Serializable {
@@ -23,6 +26,7 @@ public class TripVibeDAO implements Serializable {
     public TripVibeDAO() {
     }
 
+    @ProtoFactory
     public TripVibeDAO(String route_name, String route_number, String direction, String stop_name, String departure_time, String route_type, Boolean at_platform, String estimated_departure_time, String platform_number, Integer route_id, Integer stop_id, Integer run_id, Integer direction_id, Double capacity, Double vibe) {
         this.route_name = route_name;
         this.route_number = route_number;
@@ -41,6 +45,7 @@ public class TripVibeDAO implements Serializable {
         this.vibe = vibe;
     }
 
+    @ProtoField(number = 1)
     public String getRoute_name() {
         return route_name;
     }
@@ -49,6 +54,7 @@ public class TripVibeDAO implements Serializable {
         this.route_name = route_name;
     }
 
+    @ProtoField(number = 2)
     public String getRoute_number() {
         return route_number;
     }
@@ -57,6 +63,7 @@ public class TripVibeDAO implements Serializable {
         this.route_number = route_number;
     }
 
+    @ProtoField(number = 3)
     public String getDirection() {
         return direction;
     }
@@ -65,6 +72,7 @@ public class TripVibeDAO implements Serializable {
         this.direction = direction;
     }
 
+    @ProtoField(number = 4)
     public String getStop_name() {
         return stop_name;
     }
@@ -73,6 +81,7 @@ public class TripVibeDAO implements Serializable {
         this.stop_name = stop_name;
     }
 
+    @ProtoField(number = 5)
     public String getDeparture_time() {
         return departure_time;
     }
@@ -81,6 +90,7 @@ public class TripVibeDAO implements Serializable {
         this.departure_time = departure_time;
     }
 
+    @ProtoField(number = 6)
     public String getRoute_type() {
         return route_type;
     }
@@ -89,6 +99,7 @@ public class TripVibeDAO implements Serializable {
         this.route_type = route_type;
     }
 
+    @ProtoField(number = 7)
     public Boolean getAt_platform() {
         return at_platform;
     }
@@ -97,6 +108,7 @@ public class TripVibeDAO implements Serializable {
         this.at_platform = at_platform;
     }
 
+    @ProtoField(number = 8)
     public String getEstimated_departure_time() {
         return estimated_departure_time;
     }
@@ -105,6 +117,7 @@ public class TripVibeDAO implements Serializable {
         this.estimated_departure_time = estimated_departure_time;
     }
 
+    @ProtoField(number = 9)
     public String getPlatform_number() {
         return platform_number;
     }
@@ -113,6 +126,7 @@ public class TripVibeDAO implements Serializable {
         this.platform_number = platform_number;
     }
 
+    @ProtoField(number = 10)
     public Integer getRoute_id() {
         return route_id;
     }
@@ -121,6 +135,7 @@ public class TripVibeDAO implements Serializable {
         this.route_id = route_id;
     }
 
+    @ProtoField(number = 11)
     public Integer getStop_id() {
         return stop_id;
     }
@@ -129,6 +144,7 @@ public class TripVibeDAO implements Serializable {
         this.stop_id = stop_id;
     }
 
+    @ProtoField(number = 12)
     public Integer getRun_id() {
         return run_id;
     }
@@ -137,6 +153,7 @@ public class TripVibeDAO implements Serializable {
         this.run_id = run_id;
     }
 
+    @ProtoField(number = 13)
     public Integer getDirection_id() {
         return direction_id;
     }
@@ -145,6 +162,7 @@ public class TripVibeDAO implements Serializable {
         this.direction_id = direction_id;
     }
 
+    @ProtoField(number = 14)
     public Double getCapacity() {
         return capacity;
     }
@@ -153,6 +171,7 @@ public class TripVibeDAO implements Serializable {
         this.capacity = capacity;
     }
 
+    @ProtoField(number = 15)
     public Double getVibe() {
         return vibe;
     }
