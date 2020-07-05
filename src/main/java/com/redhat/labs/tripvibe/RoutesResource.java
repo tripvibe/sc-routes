@@ -86,16 +86,8 @@ public class RoutesResource {
     @Inject
     RemoteCacheManager cacheManager;
 
-    @Inject
-    @Remote("routeType")
     RemoteCache<String, RouteType> routeTypeCache;
-
-    @Inject
-    @Remote("routeNameNumber")
     RemoteCache<String, RouteNameNumber> routeNameNumberCache;
-
-    @Inject
-    @Remote("directionName")
     RemoteCache<String, DirectionName> directionNameCache;
 
     @Inject
@@ -124,9 +116,9 @@ public class RoutesResource {
 
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         log.info("On start - get caches");
-        cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
-        cacheManager.administration().getOrCreateCache("routeNameNumber", DefaultTemplate.REPL_ASYNC);
-        cacheManager.administration().getOrCreateCache("directionName", DefaultTemplate.REPL_ASYNC);
+        routeTypeCache = cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
+        routeNameNumberCache = cacheManager.administration().getOrCreateCache("routeNameNumber", DefaultTemplate.REPL_ASYNC);
+        directionNameCache = cacheManager.administration().getOrCreateCache("directionName", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 

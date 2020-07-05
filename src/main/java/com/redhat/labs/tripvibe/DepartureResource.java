@@ -87,39 +87,22 @@ public class DepartureResource {
     @ConfigProperty(name = "com.redhat.labs.tripvibe.enableCache")
     Boolean enableCache = false;
 
-    @Inject
-    @Remote("routesCache")
     RemoteCache<Integer, Route> routesCache;
-
-    @Inject
-    @Remote("directionsCache")
     RemoteCache<String, Direction> directionsCache;
-
-    @Inject
-    @Remote("vibeCache")
     RemoteCache<String, Double> vibeCache;
-
-    @Inject
-    @Remote("capacityCache")
     RemoteCache<String, Double> capacityCache;
-
-    @Inject
-    @Remote("stopsCache")
     RemoteCache<LatLongDistCacheKey, Stops> stopsCache;
-
-    @Inject
-    @Remote("searchCache")
     RemoteCache<String, Stops> searchCache;
 
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         if (!enableCache) return;
         log.info("On start - get caches");
-        cacheManager.administration().getOrCreateCache("routesCache", DefaultTemplate.REPL_ASYNC);
-        cacheManager.administration().getOrCreateCache("directionsCache", DefaultTemplate.REPL_ASYNC);
-        cacheManager.administration().getOrCreateCache("vibeCache", DefaultTemplate.REPL_ASYNC);
-        cacheManager.administration().getOrCreateCache("capacityCache", DefaultTemplate.REPL_ASYNC);
-        cacheManager.administration().getOrCreateCache("stopsCache", DefaultTemplate.REPL_ASYNC);
-        cacheManager.administration().getOrCreateCache("searchCache", DefaultTemplate.REPL_ASYNC);
+        routesCache = cacheManager.administration().getOrCreateCache("routesCache", DefaultTemplate.REPL_ASYNC);
+        directionsCache = cacheManager.administration().getOrCreateCache("directionsCache", DefaultTemplate.REPL_ASYNC);
+        vibeCache = cacheManager.administration().getOrCreateCache("vibeCache", DefaultTemplate.REPL_ASYNC);
+        capacityCache = cacheManager.administration().getOrCreateCache("capacityCache", DefaultTemplate.REPL_ASYNC);
+        stopsCache = cacheManager.administration().getOrCreateCache("stopsCache", DefaultTemplate.REPL_ASYNC);
+        searchCache = cacheManager.administration().getOrCreateCache("searchCache", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 
