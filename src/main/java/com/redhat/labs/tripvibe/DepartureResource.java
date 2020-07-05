@@ -5,6 +5,9 @@ import com.redhat.labs.tripvibe.rest.SubmitQueryService;
 import com.redhat.labs.tripvibe.services.*;
 import com.redhat.labs.tripvibe.util.Signature;
 import io.quarkus.runtime.StartupEvent;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -27,10 +30,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -113,6 +113,12 @@ public class DepartureResource {
         capacityCache.remove(route_id);
     }
 
+    private Set<Departure> getDepartures(ImmutablePair<Stop, Integer> stop) {
+        Uni<DepartureResponse> mdr = Uni.createFrom().item(departureService.departures(stop.right, stop.left.getStop_id(),
+                devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+        return mdr.await().indefinitely().getDepartures();
+    }
+
     @GET
     @Path("/nearby-departures/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -148,13 +154,11 @@ public class DepartureResource {
         Instant utcNow = Instant.now();
 
         routeTypeStops.parallelStream().forEach(stop -> {
-            Set<Departure> departures = departureService.departures(stop.right, stop.left.getStop_id(),
-                    devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))
-                    .getDepartures().stream()
-                    .filter(dep ->
-                            dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
+            List<Departure> departures = Multi.createFrom().iterable(getDepartures(stop)).transform()
+                    .byFilteringItemsWith(
+                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
-                    .collect(Collectors.toSet());
+                    .collectItems().asList().await().indefinitely();
 
             log.debug("Departures count : " + departures.size());
             if (!departures.isEmpty()) {
@@ -288,13 +292,11 @@ public class DepartureResource {
         Instant utcNow = Instant.now();
 
         routeTypeStops.parallelStream().forEach(stop -> {
-            Set<Departure> departures = departureService.departures(stop.right, stop.left.getStop_id(),
-                    devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))
-                    .getDepartures().stream()
-                    .filter(dep ->
-                            dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
-                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(1, ChronoUnit.HOURS)))
-                    .collect(Collectors.toSet());
+            List<Departure> departures = Multi.createFrom().iterable(getDepartures(stop)).transform()
+                    .byFilteringItemsWith(
+                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
+                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
+                    .collectItems().asList().await().indefinitely();
 
             log.debug("Departure count: " + departures.size());
             if (!departures.isEmpty()) {
@@ -371,6 +373,7 @@ public class DepartureResource {
         vibeCache.put(route_id, vib, 1200, TimeUnit.SECONDS);
         return vib;
     }
+
     private void printCacheSizes() {
         log.info("Routes Cache contains " + routesCache.size() + " items ");
         log.info("Directions Cache contains " + directionsCache.size() + " items ");
