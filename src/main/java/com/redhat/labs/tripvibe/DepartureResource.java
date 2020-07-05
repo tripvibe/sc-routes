@@ -142,7 +142,7 @@ public class DepartureResource {
         log.info("Retrieving nearby departures...");
         LatLongDistCacheKey lldkey = new LatLongDistCacheKey(latlong, distance);
         Stops stops = new Stops();
-        if (stopsCache.containsKey(lldkey)) {
+        if (enableCache && stopsCache.containsKey(lldkey)) {
             stops = stopsCache.get(lldkey);
         } else {
             Set<Stop> st = stopsService.stops(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance)).getStops();
@@ -152,9 +152,10 @@ public class DepartureResource {
         if (stops.getStops().size() == 0) {
             return new HashSet<>(); // No stops nearby, return immediately
         }
-        stopsCache.put(lldkey, stops, 2, TimeUnit.HOURS);
-
-        printCacheSizes();
+        if (enableCache) {
+            stopsCache.put(lldkey, stops, 2, TimeUnit.HOURS);
+            printCacheSizes();
+        }
 
         //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
         //cross join routeTypes and stops
@@ -280,7 +281,7 @@ public class DepartureResource {
         log.info("Retrieving departures by stop using keyword: " + term);
 
         Stops stops = new Stops();
-        if (searchCache.containsKey(term)) {
+        if (enableCache && searchCache.containsKey(term)) {
             stops = searchCache.get(term);
         } else {
             Set<Stop> st = searchService.search(term, routeType, devid,
@@ -291,9 +292,11 @@ public class DepartureResource {
         if (stops.getStops().size() == 0) {
             return new HashSet<>(); // No stops nearby, return immediately
         }
-        searchCache.put(term, stops, 2, TimeUnit.HOURS);
 
-        printCacheSizes();
+        if (enableCache) {
+            searchCache.put(term, stops, 2, TimeUnit.HOURS);
+            printCacheSizes();
+        }
 
         //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
         //cross join routeTypes and stops
