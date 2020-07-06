@@ -257,7 +257,8 @@ public class DepartureResource {
 
             Direction direction = directionService.directions(routeId, devid, signature.generate("/v3/directions/route/" + routeId))
                     .getDirections().stream().filter(d -> d.getDirection_id() == directionId && d.getRoute_type() == routeType)
-                    .findFirst().get();
+                    .findFirst()
+                    .orElse(null);
             localDirectionsCache.put(cacheKey, direction);
             localDirectionsCacheAge.put(cacheKey, Instant.now());
             return direction;
@@ -271,8 +272,10 @@ public class DepartureResource {
         if (directions.isEmpty()) {
             return null;
         }
-        Direction direction = directions.stream().filter(d -> d.getDirection_id() == directionId && d.getRoute_type() == routeType)
-                .findFirst().get();
+        Direction direction = directions.stream()
+                .filter(d -> d.getDirection_id() == directionId && d.getRoute_type() == routeType)
+                .findFirst()
+                .orElse(null);
 
         directionsCache.put(cacheKey, direction);
         return direction;
