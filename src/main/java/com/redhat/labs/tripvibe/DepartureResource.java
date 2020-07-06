@@ -333,6 +333,9 @@ public class DepartureResource {
                     }
                     Route route = getRouteById(dep.getRoute_id());
                     Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.right);
+                    if (null == route || null == direction) {
+                        return null;
+                    }
                     DepartureDAO d = new DepartureDAO(
                             getRoutTypeName(stop.right),
                             route.getRoute_name(),
@@ -350,7 +353,7 @@ public class DepartureResource {
                     );
                     departureDAOCache.put(rdck, d, 60, TimeUnit.SECONDS);
                     return d;
-                }).collect(Collectors.toSet());
+                }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
                 nearbyDepartures.addAll(nearby);
             }
         });
