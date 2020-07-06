@@ -194,9 +194,8 @@ public class DepartureResource {
                             dep.getStop_id(),
                             dep.getRun_id(),
                             dep.getDirection_id(),
-                            //capacityAverage(dep.getRoute_id().toString(), stop.right.toString(),  dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()),
-                            capacityAverage(dep.getRoute_id().toString()),
-                            vibeAverage(dep.getRoute_id().toString()));
+                            capacityAverage(dep.getRoute_id().toString(), stop.right.toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()),
+                            vibeAverage(dep.getRoute_id().toString(), stop.right.toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()));
                     tripVibeDAOCache.put(rdck, t, 60, TimeUnit.SECONDS);
                     return t;
                 }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
@@ -395,6 +394,35 @@ public class DepartureResource {
         }
         capacityCache.put(cacheKey, cap, 1200, TimeUnit.SECONDS);
         return cap;
+    }
+
+    private Double vibeAverage(String route_id, String route_type, String direction_id, String run_id, String stop_id) {
+        Double vib = -1.0;
+        String cacheKey = String.format("%s-%s-%s-%s-%s", route_id, route_type, direction_id, run_id, stop_id);
+        log.debug("capacityAverage " + cacheKey);
+        if (vibeCache.containsKey(cacheKey)) {
+            return vibeCache.get(cacheKey);
+        }
+        try {
+            Double ret = submitQueryService.avgVibeAllID(route_id, route_type, direction_id, run_id, stop_id);
+            if (null != ret) {
+                vib = ret;
+            } else {
+                vib = vibeAverage(route_id);
+            }
+        } catch (javax.ws.rs.WebApplicationException e) {
+            if (e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()
+                    || e.getResponse().getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
+                // OK nothing collected yet, return default
+                log.debug("vibeAverage - nothing found: " + e.getResponse().getStatus());
+            } else {
+                log.error("vibeAverage - something went wrong " + e);
+            }
+        } catch (Exception ex) {
+            log.debug(ex.getMessage());
+        }
+        vibeCache.put(cacheKey, vib, 1200, TimeUnit.SECONDS);
+        return vib;
     }
 
     private Double capacityAverage(String route_id) {

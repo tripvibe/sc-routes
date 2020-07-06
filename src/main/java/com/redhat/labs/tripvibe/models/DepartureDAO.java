@@ -4,6 +4,7 @@ import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class DepartureDAO implements Serializable {
 
@@ -158,5 +159,30 @@ public class DepartureDAO implements Serializable {
 
     public void setDirection_id(Integer direction_id) {
         this.direction_id = direction_id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DepartureDAO that = (DepartureDAO) o;
+        return Objects.equals(route_name, that.route_name) &&
+                Objects.equals(route_number, that.route_number) &&
+                Objects.equals(direction, that.direction) &&
+                Objects.equals(stop_name, that.stop_name) &&
+                Objects.equals(departure_time, that.departure_time) &&
+                Objects.equals(route_type, that.route_type) &&
+                Objects.equals(at_platform, that.at_platform) &&
+                Objects.equals(estimated_departure_time, that.estimated_departure_time) &&
+                Objects.equals(platform_number, that.platform_number) &&
+                Objects.equals(route_id, that.route_id) &&
+                Objects.equals(stop_id, that.stop_id) &&
+                Objects.equals(run_id, that.run_id) &&
+                Objects.equals(direction_id, that.direction_id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(route_name, route_number, direction, stop_name, departure_time, route_type, at_platform, estimated_departure_time, platform_number, route_id, stop_id, run_id, direction_id);
     }
 }
