@@ -133,7 +133,8 @@ public class DepartureResource {
         if (nextHours != null) this.nextHours = nextHours;
         if (pastHours != null) this.pastHours = pastHours;
 
-        log.info("Retrieving nearby departures...");
+        log.info("Retrieving departures by stop using latlong: " + latlong + " distance: " + distance + " with pastHours: " + this.pastHours + " nextHours: " + this.nextHours);
+
         LatLongDistCacheKey lldkey = new LatLongDistCacheKey(latlong, distance);
         Stops stops = new Stops();
         if (enableCache && stopsCache.containsKey(lldkey)) {
@@ -280,9 +281,12 @@ public class DepartureResource {
     @GET
     @Path("/search-departures/{term}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<DepartureDAO> searchDepartures(@PathParam String term, @QueryParam int routeType) {
+    public Set<DepartureDAO> searchDepartures(@PathParam String term, @QueryParam int routeType, @DefaultValue("0") @QueryParam Integer pastHours, @QueryParam Integer nextHours) {
 
-        log.info("Retrieving departures by stop using keyword: " + term);
+        if (nextHours != null) this.nextHours = nextHours;
+        if (pastHours != null) this.pastHours = pastHours;
+
+        log.info("Retrieving departures by stop using keyword: " + term + " with pastHours: " + this.pastHours + " nextHours: " + this.nextHours);
 
         Stops stops = new Stops();
         if (enableCache && searchCache.containsKey(term)) {
@@ -313,7 +317,7 @@ public class DepartureResource {
         routeTypeStops.parallelStream().forEach(stop -> {
             List<Departure> departures = Multi.createFrom().iterable(getDepartures(stop)).transform()
                     .byFilteringItemsWith(
-                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
+                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastHours, ChronoUnit.HOURS))
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
                     .collectItems().asList().await().indefinitely();
 
