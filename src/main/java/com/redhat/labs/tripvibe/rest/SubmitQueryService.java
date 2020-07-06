@@ -17,9 +17,9 @@ public interface SubmitQueryService {
     Double vibeAverage(@PathParam String route_id);
 
     @GET
-    @Path("/vibe-average/{route_id}/{destination_id}")
+    @Path("/vibe-average/{route_id}/{direction_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    Double vibeAverageDestination(@PathParam String route_id, @PathParam String destination_id);
+    Double vibeAverageDestination(@PathParam String route_id, @PathParam String direction_id);
 
     @GET
     @Path("/vibe-average/{route_id}/{start}/{end}")
@@ -27,9 +27,9 @@ public interface SubmitQueryService {
     Double vibeAverageDatetime(@PathParam String route_id, @PathParam String start, @PathParam String end);
 
     @GET
-    @Path("/vibe-average/{route_id}/{start}/{end}/{destination_id}")
+    @Path("/vibe-average/{route_id}/{start}/{end}/{direction_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    Double vibeAverageDestinationDatetime(@PathParam String route_id, @PathParam String start, @PathParam String end, @PathParam String destination_id);
+    Double vibeAverageDestinationDatetime(@PathParam String route_id, @PathParam String start, @PathParam String end, @PathParam String direction_id);
 
     @GET
     @Path("/capacity-average/{route_id}")
@@ -37,9 +37,9 @@ public interface SubmitQueryService {
     Double capacityAverage(@PathParam String route_id);
 
     @GET
-    @Path("/capacity-average/{route_id}/{destination_id}")
+    @Path("/capacity-average/{route_id}/{direction_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    Double capacityAverageDestination(@PathParam String route_id, @PathParam String destination_id);
+    Double capacityAverageDestination(@PathParam String route_id, @PathParam String direction_id);
 
     @GET
     @Path("/capacity-average/{route_id}/{start}/{end}")
@@ -47,8 +47,18 @@ public interface SubmitQueryService {
     Double capacityAverageDatetime(@PathParam String route_id, @PathParam String start, @PathParam String end);
 
     @GET
-    @Path("/capacity-average/{route_id}/{start}/{end}/{destination_id}")
+    @Path("/capacity-average/{route_id}/{start}/{end}/{direction_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    Double capacityAverageDestinationDatetime(@PathParam String route_id, @PathParam String start, @PathParam String end, @PathParam String destination_id);
+    Double capacityAverageDestinationDatetime(@PathParam String route_id, @PathParam String start, @PathParam String end, @PathParam String direction_id);
+
+    @GET
+    @Path("/capacity-average/{route_id}/{route_type}/{direction_id}/{run_id}/{stop_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    Double avgCapacityAllID(@PathParam String route_id, @PathParam String route_type, @PathParam String direction_id, @PathParam String run_id, @PathParam String stop_id);
+
+    @GET
+    @Path("/vibe-average/{route_id}/{route_type}/{direction_id}/{run_id}/{stop_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    Double avgVibeAllID(@PathParam String route_id, @PathParam String route_type, @PathParam String direction_id, @PathParam String run_id, @PathParam String stop_id);
 
 }

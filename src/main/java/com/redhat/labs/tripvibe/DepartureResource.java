@@ -194,6 +194,7 @@ public class DepartureResource {
                             dep.getStop_id(),
                             dep.getRun_id(),
                             dep.getDirection_id(),
+                            //capacityAverage(dep.getRoute_id().toString(), stop.right.toString(),  dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()),
                             capacityAverage(dep.getRoute_id().toString()),
                             vibeAverage(dep.getRoute_id().toString()));
                     tripVibeDAOCache.put(rdck, t, 60, TimeUnit.SECONDS);
@@ -357,6 +358,43 @@ public class DepartureResource {
 
         log.info("Nearby departures returning count: " + nearbyDepartures.size());
         return nearbyDepartures;
+    }
+
+    /*
+    -- average vibe + capacity algorithm
+        (1) try most restrictive (route_id, route_type, direction_id, run_id, stop_id)
+        (2) then by (route_id)
+
+        -- if we want to explore
+        (3) also between time is available
+        (4) and/or any combination of the above
+    */
+    private Double capacityAverage(String route_id, String route_type, String direction_id, String run_id, String stop_id) {
+        Double cap = -1.0;
+        String cacheKey = String.format("%s-%s-%s-%s-%s", route_id, route_type, direction_id, run_id, stop_id);
+        if (capacityCache.containsKey(cacheKey)) {
+            return capacityCache.get(cacheKey);
+        }
+        try {
+            Double ret = submitQueryService.avgCapacityAllID(route_id, route_type, direction_id, run_id, stop_id);
+            if (null != ret) {
+                cap = ret;
+            } else {
+                cap = capacityAverage(route_id);
+            }
+        } catch (javax.ws.rs.WebApplicationException e) {
+            if (e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()
+                    || e.getResponse().getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
+                // OK nothing collected yet, return default
+                log.debug("capacityAverage - nothing found: " + e.getResponse().getStatus());
+            } else {
+                log.error("capacityAverage - something went wrong " + e);
+            }
+        } catch (Exception ex) {
+            log.debug(ex.getMessage());
+        }
+        capacityCache.put(cacheKey, cap, 1200, TimeUnit.SECONDS);
+        return cap;
     }
 
     private Double capacityAverage(String route_id) {

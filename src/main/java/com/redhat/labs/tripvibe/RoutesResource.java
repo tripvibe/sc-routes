@@ -206,6 +206,13 @@ public class RoutesResource {
     }
 
     @GET
+    @Path("/stops/route/{route_id}/{route_type}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String stopsById(@PathParam String route_id, @PathParam String route_type) {
+        return stopsService.routesById(route_id, route_type, devid, signature.generate("/v3/stops/route/" + route_id + "/route_type/" + route_type));
+    }
+
+    @GET
     @Path("/departures/{route_type}/{stop_id}")
     @Produces(MediaType.APPLICATION_JSON)
     public String departures(@PathParam String route_type, @PathParam String stop_id) {
