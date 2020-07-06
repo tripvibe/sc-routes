@@ -23,6 +23,7 @@ import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -51,6 +52,7 @@ public class DepartureResource {
     private Integer maxCacheAgeHour = 24; //keep the cached objects upto 24 hours
     // use to retrieve departures for the next 3 hours
     private int nextHours = 3;
+    private int pastHours = 0;
 
     @Inject
     @RestClient
@@ -126,9 +128,10 @@ public class DepartureResource {
     @GET
     @Path("/nearby-departures/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<TripVibeDAO> getNearbyDepartures(@PathParam String latlong, @PathParam String distance, @QueryParam Integer nextHours) {
+    public Set<TripVibeDAO> getNearbyDepartures(@PathParam String latlong, @PathParam String distance, @DefaultValue("0") @QueryParam Integer pastHours, @QueryParam Integer nextHours) {
 
         if (nextHours != null) this.nextHours = nextHours;
+        if (pastHours != null) this.pastHours = pastHours;
 
         log.info("Retrieving nearby departures...");
         LatLongDistCacheKey lldkey = new LatLongDistCacheKey(latlong, distance);
@@ -160,7 +163,7 @@ public class DepartureResource {
         routeTypeStops.parallelStream().forEach(stop -> {
             List<Departure> departures = Multi.createFrom().iterable(getDepartures(stop)).transform()
                     .byFilteringItemsWith(
-                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(1, ChronoUnit.MINUTES))
+                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastHours, ChronoUnit.HOURS))
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
                     .collectItems().asList().await().indefinitely();
 
