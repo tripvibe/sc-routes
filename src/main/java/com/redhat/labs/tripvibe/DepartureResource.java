@@ -49,9 +49,9 @@ public class DepartureResource {
     public static Map<String, Direction> localDirectionsCache = new HashMap<>();
     public static Map<String, Instant> localDirectionsCacheAge = new HashMap<>();
     private Integer maxCacheAgeHour = 24; //keep the cached objects upto 24 hours
-    // use to retrieve departures for the next 3 hours
-    private int nextHours = 3;
-    private int pastHours = 0;
+    // use to retrieve departures for the next 2 hours
+    private int nextSeconds = 3600*2;
+    private int pastSeconds = 0;
 
     @Inject
     @RestClient
@@ -133,14 +133,14 @@ public class DepartureResource {
             description = "This operation allows you to get all nearby departures based on geoloc and distance\",",
             deprecated = false,
             hidden = false)
-    public Set<TripVibeDAO> getNearbyDepartures(@PathParam String latlong, @PathParam String distance, @DefaultValue("0") @QueryParam Integer pastHours, @QueryParam Integer nextHours) {
+    public Set<TripVibeDAO> getNearbyDepartures(@PathParam String latlong, @PathParam String distance, @DefaultValue("0") @QueryParam Integer pastSeconds, @QueryParam Integer nextSeconds) {
 
-        if (nextHours != null) this.nextHours = nextHours;
-        if (pastHours != null) this.pastHours = pastHours;
+        if (nextSeconds != null) this.nextSeconds = nextSeconds;
+        if (pastSeconds != null) this.pastSeconds = pastSeconds;
 
-        log.info("Retrieving departures by stop using latlong: " + latlong + " distance: " + distance + " with pastHours: " + this.pastHours + " nextHours: " + this.nextHours);
+        log.info("Retrieving departures by stop using latlong: " + latlong + " distance: " + distance + " with pastSeconds: " + this.pastSeconds + " nextSeconds: " + this.nextSeconds);
 
-        String lldkey = String.format("%s-%s-%s-%s", latlong, distance, this.pastHours, this.nextHours);
+        String lldkey = String.format("%s-%s-%s-%s", latlong, distance, this.pastSeconds, this.nextSeconds);
         Stops stops = new Stops();
         if (enableCache && stopsCache.containsKey(lldkey)) {
             stops = stopsCache.get(lldkey);
@@ -163,8 +163,8 @@ public class DepartureResource {
         stops.getStops().parallelStream().forEach(stop -> {
             List<Departure> depList = Multi.createFrom().iterable(getDepartures(stop)).transform()
                     .byFilteringItemsWith(
-                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastHours, ChronoUnit.HOURS))
-                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
+                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastSeconds, ChronoUnit.SECONDS))
+                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextSeconds, ChronoUnit.SECONDS)))
                     .collectItems().asList().await().indefinitely();
             Set<Departure> departures = convertListToSet(depList);
             log.debug("Departures count : " + departures.size());
@@ -284,15 +284,15 @@ public class DepartureResource {
             description = "This operation allows you to get all nearby departures based on search_term\",",
             deprecated = false,
             hidden = false)
-    public Set<DepartureDAO> searchDepartures(@PathParam String term, @QueryParam int routeType, @DefaultValue("0") @QueryParam Integer pastHours, @QueryParam Integer nextHours) {
+    public Set<DepartureDAO> searchDepartures(@PathParam String term, @QueryParam int routeType, @DefaultValue("0") @QueryParam Integer pastSeconds, @QueryParam Integer nextSeconds) {
 
-        if (nextHours != null) this.nextHours = nextHours;
-        if (pastHours != null) this.pastHours = pastHours;
+        if (nextSeconds != null) this.nextSeconds = nextSeconds;
+        if (pastSeconds != null) this.pastSeconds = pastSeconds;
 
-        log.info("Retrieving departures by stop using keyword: " + term + " with pastHours: " + this.pastHours + " nextHours: " + this.nextHours);
+        log.info("Retrieving departures by stop using keyword: " + term + " with pastSeconds: " + this.pastSeconds + " nextSeconds: " + this.nextSeconds);
 
         Stops stops = new Stops();
-        String ckey = String.format("%s-%s-%s", term, this.pastHours, this.nextHours);
+        String ckey = String.format("%s-%s-%s", term, this.pastSeconds, this.nextSeconds);
         if (enableCache && searchCache.containsKey(ckey)) {
             stops = searchCache.get(ckey);
         } else {
@@ -316,8 +316,8 @@ public class DepartureResource {
         stops.getStops().parallelStream().forEach(stop -> {
             List<Departure> depList = Multi.createFrom().iterable(getDepartures(stop)).transform()
                     .byFilteringItemsWith(
-                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastHours, ChronoUnit.HOURS))
-                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
+                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastSeconds, ChronoUnit.SECONDS))
+                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextSeconds, ChronoUnit.SECONDS)))
                     .collectItems().asList().await().indefinitely();
             Set<Departure> departures = convertListToSet(depList);
             log.debug("Departure count: " + departures.size());
