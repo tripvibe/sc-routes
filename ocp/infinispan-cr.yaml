@@ -3,5 +3,8 @@ kind: Infinispan
 metadata:
   name: infinispan
 spec:
+  container:
+    cpu: 500m
+    memory: 1024Mi
   replicas: 2
 
