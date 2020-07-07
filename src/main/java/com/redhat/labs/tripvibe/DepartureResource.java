@@ -92,6 +92,8 @@ public class DepartureResource {
     RemoteCache<String, Double> capacityCache;
     RemoteCache<String, Stops> stopsCache;
     RemoteCache<String, Stops> searchCache;
+    RemoteCache<String, TripVibeDAO> tripVibeDAOCache;
+    RemoteCache<String, DepartureDAO> departureDAOCache;
 
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         if (!enableCache) return;
@@ -102,6 +104,8 @@ public class DepartureResource {
         capacityCache = cacheManager.administration().getOrCreateCache("capacityCache", DefaultTemplate.REPL_ASYNC);
         stopsCache = cacheManager.administration().getOrCreateCache("stopsCache", DefaultTemplate.REPL_ASYNC);
         searchCache = cacheManager.administration().getOrCreateCache("searchCache", DefaultTemplate.REPL_ASYNC);
+        tripVibeDAOCache = cacheManager.administration().getOrCreateCache("tripVibeDAOCache", DefaultTemplate.REPL_ASYNC);
+        departureDAOCache = cacheManager.administration().getOrCreateCache("departureDAOCache", DefaultTemplate.REPL_ASYNC);
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 
@@ -171,6 +175,10 @@ public class DepartureResource {
 
             if (!departures.isEmpty()) {
                 Set<TripVibeDAO> nearby = departures.stream().map(dep -> {
+                    String cacheKey = String.format("%s-%s-%s-%s-%s-%s", dep.getRoute_id().toString(), stop.getRoute_type(), dep.getDirection_id().toString(), dep.getRun_id(), dep.getStop_id(), dep.getScheduled_departure_utc().toString());
+                    if (enableCache && tripVibeDAOCache.containsKey(cacheKey)) {
+                        return tripVibeDAOCache.get(cacheKey);
+                    }
                     Route route = getRouteById(dep.getRoute_id());
                     Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.getRoute_type());
                     if (null == route || null == direction) {
@@ -192,6 +200,9 @@ public class DepartureResource {
                             dep.getDirection_id(),
                             capacityAverage(dep.getRoute_id().toString(), stop.getRoute_type().toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()),
                             vibeAverage(dep.getRoute_id().toString(), stop.getRoute_type().toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()));
+                    if (enableCache) {
+                        tripVibeDAOCache.put(cacheKey, t, 60, TimeUnit.SECONDS);
+                    }
                     return t;
                 }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
                 nearbyDepartures.addAll(nearby);
@@ -324,6 +335,10 @@ public class DepartureResource {
 
             if (!departures.isEmpty()) {
                 Set<DepartureDAO> nearby = departures.stream().map(dep -> {
+                    String cacheKey = String.format("%s-%s-%s-%s-%s-%s", dep.getRoute_id().toString(), stop.getRoute_type(), dep.getDirection_id().toString(), dep.getRun_id(), dep.getStop_id(), dep.getScheduled_departure_utc().toString());
+                    if (enableCache && departureDAOCache.containsKey(cacheKey)) {
+                        return departureDAOCache.get(cacheKey);
+                    }
                     Route route = getRouteById(dep.getRoute_id());
                     Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.getRoute_type());
                     if (null == route || null == direction) {
@@ -344,6 +359,9 @@ public class DepartureResource {
                             dep.getRun_id(),
                             dep.getDirection_id()
                     );
+                    if (enableCache) {
+                        departureDAOCache.put(cacheKey, d, 60, TimeUnit.SECONDS);
+                    }
                     return d;
                 }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
                 nearbyDepartures.addAll(nearby);
@@ -481,6 +499,8 @@ public class DepartureResource {
         log.info("Capacity Cache contains " + capacityCache.size() + " items ");
         log.info("Stops Cache contains " + stopsCache.size() + " items ");
         log.info("Search Cache contains " + searchCache.size() + " items ");
+        log.info("TripVibeDAO Cache contains " + tripVibeDAOCache.size() + " items ");
+        log.info("DepartureDAO Cache contains " + departureDAOCache.size() + " items ");
     }
 
     private <T> Set<T> convertListToSet(List<T> list) {
