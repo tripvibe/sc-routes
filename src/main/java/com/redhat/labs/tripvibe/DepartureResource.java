@@ -110,17 +110,17 @@ public class DepartureResource {
     }
 
     @GET
-    @Path("/evict-single/{route_id}")
+    @Path("/evict-single/{cacheKey}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "evictSingle",
             summary = "evict a single sentiment",
             description = "This operation allows you to evict a sentiment from the cache based on route_id\",",
             deprecated = false,
             hidden = false)
-    public void evictSingle(@PathParam String route_id) {
-        log.info("Evicting vibe,capacity for: " + route_id);
-        vibeCache.remove(route_id);
-        capacityCache.remove(route_id);
+    public void evictSingle(@PathParam String cacheKey) {
+        log.info("Evicting vibe,capacity for: " + cacheKey);
+        vibeCache.remove(cacheKey);
+        capacityCache.remove(cacheKey);
     }
 
     private Set<Departure> getDepartures(Stop stop) {
