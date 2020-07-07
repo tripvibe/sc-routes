@@ -5,6 +5,7 @@ import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @RegisterForReflection
 public class Stop implements Serializable {
@@ -105,4 +106,23 @@ public class Stop implements Serializable {
         this.stop_sequence = stop_sequence;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Stop stop = (Stop) o;
+        return Objects.equals(stop_distance, stop.stop_distance) &&
+                Objects.equals(stop_suburb, stop.stop_suburb) &&
+                Objects.equals(stop_name, stop.stop_name) &&
+                Objects.equals(stop_id, stop.stop_id) &&
+                Objects.equals(route_type, stop.route_type) &&
+                Objects.equals(stop_latitude, stop.stop_latitude) &&
+                Objects.equals(stop_longitude, stop.stop_longitude) &&
+                Objects.equals(stop_sequence, stop.stop_sequence);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(stop_distance, stop_suburb, stop_name, stop_id, route_type, stop_latitude, stop_longitude, stop_sequence);
+    }
 }

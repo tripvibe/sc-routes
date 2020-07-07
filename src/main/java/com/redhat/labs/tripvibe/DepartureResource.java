@@ -8,7 +8,6 @@ import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.infinispan.client.hotrod.DefaultTemplate;
@@ -34,7 +33,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Path("/api")
 @ApplicationScoped
@@ -119,9 +117,9 @@ public class DepartureResource {
         capacityCache.remove(route_id);
     }
 
-    private Set<Departure> getDepartures(ImmutablePair<Stop, Integer> stop) {
-        Uni<DepartureResponse> mdr = Uni.createFrom().item(departureService.departures(stop.right, stop.left.getStop_id(),
-                devid, signature.generate("/v3/departures/route_type/" + stop.right + "/stop/" + stop.left.getStop_id()))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+    private Set<Departure> getDepartures(Stop stop) {
+        Uni<DepartureResponse> mdr = Uni.createFrom().item(departureService.departures(stop.getRoute_type(), stop.getStop_id(),
+                devid, signature.generate("/v3/departures/route_type/" + stop.getRoute_type() + "/stop/" + stop.getStop_id()))).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
         return mdr.await().indefinitely().getDepartures();
     }
 
@@ -152,23 +150,18 @@ public class DepartureResource {
             printCacheSizes();
         }
 
-        //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
-        //cross join routeTypes and stops
-        Set<ImmutablePair<Stop, Integer>> routeTypeStops = stops.getStops().stream().flatMap(stop ->
-                (IntStream.of(0, 1, 2, 3, 4)).mapToObj(routeType -> new ImmutablePair<>(stop, routeType)))
-                .collect(Collectors.toSet());
-
         HashSet<TripVibeDAO> nearbyDepartures = new HashSet<TripVibeDAO>();
         Instant utcNow = Instant.now();
 
-        routeTypeStops.parallelStream().forEach(stop -> {
-            List<Departure> departures = Multi.createFrom().iterable(getDepartures(stop)).transform()
+        stops.getStops().parallelStream().forEach(stop -> {
+            List<Departure> depList = Multi.createFrom().iterable(getDepartures(stop)).transform()
                     .byFilteringItemsWith(
                             dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastHours, ChronoUnit.HOURS))
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
                     .collectItems().asList().await().indefinitely();
-
+            Set<Departure> departures = convertListToSet(depList);
             log.debug("Departures count : " + departures.size());
+
             if (!departures.isEmpty()) {
                 Set<TripVibeDAO> nearby = departures.stream().map(dep -> {
                     RouteDirectionCacheKey rdck = new RouteDirectionCacheKey(dep.getRoute_id().toString(), dep.getDirection_id().toString());
@@ -176,7 +169,7 @@ public class DepartureResource {
                         return tripVibeDAOCache.get(rdck);
                     }
                     Route route = getRouteById(dep.getRoute_id());
-                    Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.right);
+                    Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.getRoute_type());
                     if (null == route || null == direction) {
                         return null;
                     }
@@ -184,9 +177,9 @@ public class DepartureResource {
                             route.getRoute_name(),
                             route.getRoute_number(),
                             direction.getDirection_name(),
-                            stop.left.getStop_name(),
+                            stop.getStop_name(),
                             dep.getScheduled_departure_utc().toString(),
-                            getRoutTypeName(stop.right),
+                            getRoutTypeName(stop.getRoute_type()),
                             dep.getAt_platform(),
                             dep.getEstimated_departure_utc() == null ? null : dep.getEstimated_departure_utc().toString(),
                             dep.getPlatform_number() == null ? null : dep.getPlatform_number().toString(),
@@ -194,8 +187,8 @@ public class DepartureResource {
                             dep.getStop_id(),
                             dep.getRun_id(),
                             dep.getDirection_id(),
-                            capacityAverage(dep.getRoute_id().toString(), stop.right.toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()),
-                            vibeAverage(dep.getRoute_id().toString(), stop.right.toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()));
+                            capacityAverage(dep.getRoute_id().toString(), stop.getRoute_type().toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()),
+                            vibeAverage(dep.getRoute_id().toString(), stop.getRoute_type().toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()));
                     tripVibeDAOCache.put(rdck, t, 60, TimeUnit.SECONDS);
                     return t;
                 }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
@@ -309,22 +302,18 @@ public class DepartureResource {
             printCacheSizes();
         }
 
-        //0 = train, 1 = tram, 2 = bus, 3 = vline, 4 = night bus
-        //cross join routeTypes and stops
-        var routeTypeStops = stops.getStops().stream().map(stop -> new ImmutablePair<>(stop, routeType))
-                .collect(Collectors.toSet());
-
         HashSet<DepartureDAO> nearbyDepartures = new HashSet<DepartureDAO>();
         Instant utcNow = Instant.now();
 
-        routeTypeStops.parallelStream().forEach(stop -> {
-            List<Departure> departures = Multi.createFrom().iterable(getDepartures(stop)).transform()
+        stops.getStops().parallelStream().forEach(stop -> {
+            List<Departure> depList = Multi.createFrom().iterable(getDepartures(stop)).transform()
                     .byFilteringItemsWith(
                             dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastHours, ChronoUnit.HOURS))
                                     && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextHours, ChronoUnit.HOURS)))
                     .collectItems().asList().await().indefinitely();
-
+            Set<Departure> departures = convertListToSet(depList);
             log.debug("Departure count: " + departures.size());
+
             if (!departures.isEmpty()) {
                 Set<DepartureDAO> nearby = departures.stream().map(dep -> {
                     RouteDirectionCacheKey rdck = new RouteDirectionCacheKey(dep.getRoute_id().toString(), dep.getDirection_id().toString());
@@ -332,16 +321,16 @@ public class DepartureResource {
                         return departureDAOCache.get(rdck);
                     }
                     Route route = getRouteById(dep.getRoute_id());
-                    Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.right);
+                    Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.getRoute_type());
                     if (null == route || null == direction) {
                         return null;
                     }
                     DepartureDAO d = new DepartureDAO(
-                            getRoutTypeName(stop.right),
+                            getRoutTypeName(stop.getRoute_type()),
                             route.getRoute_name(),
                             route.getRoute_number(),
                             direction.getDirection_name(),
-                            stop.left.getStop_name(),
+                            stop.getStop_name(),
                             dep.getScheduled_departure_utc().toString(),
                             dep.getAt_platform(),
                             dep.getEstimated_departure_utc() == null ? null : dep.getEstimated_departure_utc().toString(),
@@ -483,5 +472,10 @@ public class DepartureResource {
         log.info("Search Cache contains " + searchCache.size() + " items ");
         log.info("TripVibeDAO Cache contains " + tripVibeDAOCache.size() + " items ");
         log.info("DepartureDAO Cache contains " + departureDAOCache.size() + " items ");
+    }
+
+    private <T> Set<T> convertListToSet(List<T> list) {
+        // create a set from the List
+        return list.stream().collect(Collectors.toSet());
     }
 }
