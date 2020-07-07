@@ -9,6 +9,7 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.infinispan.client.hotrod.DefaultTemplate;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -158,6 +159,11 @@ public class RoutesResource {
     @Path("/routes/{latlong}/{distance}")
     @Produces(MediaType.SERVER_SENT_EVENTS)
     @SseElementType(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "stream",
+            summary = "stream routes near me",
+            description = "This operation allows you to stream server side events for all routes near a geoloc and distance\",",
+            deprecated = false,
+            hidden = false)
     public Publisher<List<RouteDAO>> stream(@PathParam String latlong, @PathParam String distance) {
         Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(60)).onOverflow().drop();
         return ticks.on().subscribed(subscription -> log.info("We are subscribed!"))
@@ -172,6 +178,11 @@ public class RoutesResource {
     @GET
     @Path("/search/routes/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "oneShot",
+            summary = "get routes near me",
+            description = "This operation allows you to get all routes near a geoloc and distance\",",
+            deprecated = false,
+            hidden = false)
     public List<RouteDAO> oneShot(@PathParam String latlong, @PathParam String distance) {
         return departMulti(latlong, distance).collectItems().first().await().indefinitely();
     }
@@ -180,6 +191,11 @@ public class RoutesResource {
     @Path("/routes/search/{route_types}/{search_term}")
     @Produces(MediaType.SERVER_SENT_EVENTS)
     @SseElementType(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "streamSearch",
+            summary = "stream routes near me based on search term",
+            description = "This operation allows you to stream server side events for all routes based on a search term\",",
+            deprecated = false,
+            hidden = false)
     public Publisher<List<RouteDAO>> streamSearch(@PathParam String route_types, @PathParam String search_term) {
         Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(60)).onOverflow().drop();
         return ticks.on().subscribed(subscription -> log.info("We are subscribed!"))
@@ -194,6 +210,11 @@ public class RoutesResource {
     @GET
     @Path("/search/routes/search/{route_types}/{search_term}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "oneShotSearch",
+            summary = "get routes near me based on search term",
+            description = "This operation allows you to get all routes based on a search term\",",
+            deprecated = false,
+            hidden = false)
     public List<RouteDAO> oneShotSearch(@PathParam String route_types, @PathParam String search_term) {
         return departMultiSearch(route_types, search_term).collectItems().first().await().indefinitely();
     }
@@ -201,6 +222,11 @@ public class RoutesResource {
     @GET
     @Path("/stops/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "stops",
+            summary = "get stops",
+            description = "This operation allows you to get all stops based on a geoloc and distance\",",
+            deprecated = false,
+            hidden = false)
     public String stops(@PathParam String latlong, @PathParam String distance) {
         return stopsService.routes(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance));
     }
@@ -208,6 +234,11 @@ public class RoutesResource {
     @GET
     @Path("/stops/route/{route_id}/{route_type}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "stopsById",
+            summary = "get stops by id",
+            description = "This operation allows you to get all stops based on route_id and route_type\",",
+            deprecated = false,
+            hidden = false)
     public String stopsById(@PathParam String route_id, @PathParam String route_type) {
         return stopsService.routesById(route_id, route_type, devid, signature.generate("/v3/stops/route/" + route_id + "/route_type/" + route_type));
     }
@@ -215,6 +246,11 @@ public class RoutesResource {
     @GET
     @Path("/departures/{route_type}/{stop_id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "departures",
+            summary = "get departures",
+            description = "This operation allows you to get all departures based on by route_type and stop_id\",",
+            deprecated = false,
+            hidden = false)
     public String departures(@PathParam String route_type, @PathParam String stop_id) {
         return departuresService.departures(route_type, stop_id, devid, signature.generate("/v3/departures/route_type/" + route_type + "/stop/" + stop_id));
     }
@@ -222,6 +258,11 @@ public class RoutesResource {
     @GET
     @Path("/route/{route_id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "route",
+            summary = "get routes by route_id",
+            description = "This operation allows you to get all routes by route_id\",",
+            deprecated = false,
+            hidden = false)
     public String route(@PathParam String route_id) {
         return routeService.route(route_id, devid, signature.generate("/v3/routes/" + route_id));
     }
@@ -229,19 +270,34 @@ public class RoutesResource {
     @GET
     @Path("/route_types")
     @Produces(MediaType.APPLICATION_JSON)
-    public String routeType(@PathParam String route_id) {
+    @Operation(operationId = "routeType",
+            summary = "get routes types",
+            description = "This operation allows you to get all routes types\",",
+            deprecated = false,
+            hidden = false)
+    public String routeType() {
         return routeTypeService.routes(devid, signature.generate("/v3/route_types"));
     }
 
     @GET
     @Path("/directions/{route_id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "direction",
+            summary = "get directions by route_id",
+            description = "This operation allows you to get all directions types by route_id\",",
+            deprecated = false,
+            hidden = false)
     public String direction(@PathParam String route_id) {
         return directionService.directions(route_id, devid, signature.generate("/v3/directions/route/" + route_id));
     }
 
     @DELETE
     @Path("/clearcache")
+    @Operation(operationId = "cleanCache",
+            summary = "⚡ delete all cached objects ⚡",
+            description = "This operation allows you to delete all cached objects\",",
+            deprecated = false,
+            hidden = false)
     public void cleanCache() {
         cleanupCaches(routeTypeCache, routeNameNumberCache, directionNameCache, routesCache, directionsCache, vibeCache, capacityCache, stopsCache, searchCache, tripVibeDAOCache, departureDAOCache);
     }
@@ -249,6 +305,11 @@ public class RoutesResource {
     @GET
     @Path("/search/{route_types}/{search_term}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "search",
+            summary = "search for all routes",
+            description = "This operation allows you to search for all routes by route_type and search_term\",",
+            deprecated = false,
+            hidden = false)
     public String search(@PathParam String search_term, @PathParam String route_types) {
         return searchService.routes(search_term, route_types, "false", devid, signature.generate("/v3/search/" + search_term + "?route_types=" + route_types + "&include_outlets=false"));
     }

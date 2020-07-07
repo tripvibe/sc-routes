@@ -9,6 +9,7 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.infinispan.client.hotrod.DefaultTemplate;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -111,6 +112,11 @@ public class DepartureResource {
     @GET
     @Path("/evict-single/{route_id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "evictSingle",
+            summary = "evict a single sentiment",
+            description = "This operation allows you to evict a sentiment from the cache based on route_id\",",
+            deprecated = false,
+            hidden = false)
     public void evictSingle(@PathParam String route_id) {
         log.info("Evicting vibe,capacity for: " + route_id);
         vibeCache.remove(route_id);
@@ -126,6 +132,11 @@ public class DepartureResource {
     @GET
     @Path("/nearby-departures/{latlong}/{distance}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getNearbyDepartures",
+            summary = "get nearby departures",
+            description = "This operation allows you to get all nearby departures based on geoloc and distance\",",
+            deprecated = false,
+            hidden = false)
     public Set<TripVibeDAO> getNearbyDepartures(@PathParam String latlong, @PathParam String distance, @DefaultValue("0") @QueryParam Integer pastHours, @QueryParam Integer nextHours) {
 
         if (nextHours != null) this.nextHours = nextHours;
@@ -277,6 +288,11 @@ public class DepartureResource {
     @GET
     @Path("/search-departures/{term}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "searchDepartures",
+            summary = "get nearby departures by search_term",
+            description = "This operation allows you to get all nearby departures based on search_term\",",
+            deprecated = false,
+            hidden = false)
     public Set<DepartureDAO> searchDepartures(@PathParam String term, @QueryParam int routeType, @DefaultValue("0") @QueryParam Integer pastHours, @QueryParam Integer nextHours) {
 
         if (nextHours != null) this.nextHours = nextHours;
