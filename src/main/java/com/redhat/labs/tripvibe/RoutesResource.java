@@ -115,14 +115,6 @@ public class RoutesResource {
     @Remote("searchCache")
     RemoteCache<String, Stops> searchCache;
 
-    @Inject
-    @Remote("tripVibeDAOCache")
-    RemoteCache<RouteDirectionCacheKey, TripVibeDAO> tripVibeDAOCache;
-
-    @Inject
-    @Remote("departureDAOCache")
-    RemoteCache<RouteDirectionCacheKey, DepartureDAO> departureDAOCache;
-
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         log.info("On start - get caches");
         routeTypeCache = cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
@@ -299,7 +291,7 @@ public class RoutesResource {
             deprecated = false,
             hidden = false)
     public void cleanCache() {
-        cleanupCaches(routeTypeCache, routeNameNumberCache, directionNameCache, routesCache, directionsCache, vibeCache, capacityCache, stopsCache, searchCache, tripVibeDAOCache, departureDAOCache);
+        cleanupCaches(routeTypeCache, routeNameNumberCache, directionNameCache, routesCache, directionsCache, vibeCache, capacityCache, stopsCache, searchCache);
     }
 
     @GET
@@ -460,9 +452,7 @@ public class RoutesResource {
                                RemoteCache<String, Double> vibeCache,
                                RemoteCache<String, Double> capacityCache,
                                RemoteCache<LatLongDistCacheKey, Stops> stopsCache,
-                               RemoteCache<String, Stops> searchCache,
-                               RemoteCache<RouteDirectionCacheKey, TripVibeDAO> tripVibeDAOCache,
-                               RemoteCache<RouteDirectionCacheKey, DepartureDAO> departureDAOCache) {
+                               RemoteCache<String, Stops> searchCache) {
         try {
             Uni.createFrom().item(routeType.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
@@ -481,10 +471,6 @@ public class RoutesResource {
             Uni.createFrom().item(stopsCache.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
             Uni.createFrom().item(searchCache.clearAsync().get(10, TimeUnit.SECONDS))
-                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
-            Uni.createFrom().item(tripVibeDAOCache.clearAsync().get(10, TimeUnit.SECONDS))
-                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
-            Uni.createFrom().item(departureDAOCache.clearAsync().get(10, TimeUnit.SECONDS))
                     .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()).await().indefinitely();
         } catch (Exception e) {
             log.error("Something went wrong clearing data stores." + e);
