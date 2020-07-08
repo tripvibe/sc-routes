@@ -303,7 +303,7 @@ public class DepartureResource {
         log.info("Retrieving departures by stop using keyword: " + term + " with pastSeconds: " + this.pastSeconds + " nextSeconds: " + this.nextSeconds);
 
         Stops stops = new Stops();
-        String ckey = String.format("%s-%s-%s", term, this.pastSeconds, this.nextSeconds);
+        String ckey = String.format("%s-%s-%s-%s", term, this.pastSeconds, this.nextSeconds, routeType);
         if (enableCache && searchCache.containsKey(ckey)) {
             stops = searchCache.get(ckey);
         } else {
