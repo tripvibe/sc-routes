@@ -118,9 +118,10 @@ public class DepartureResource {
             deprecated = false,
             hidden = false)
     public void evictSingle(@PathParam String cacheKey) {
-        log.info("Evicting vibe,capacity for: " + cacheKey);
+        log.info("Evicting for: " + cacheKey);
         vibeCache.remove(cacheKey);
         capacityCache.remove(cacheKey);
+        tripVibeDAOCache.remove(cacheKey);
     }
 
     private Set<Departure> getDepartures(Stop stop) {
