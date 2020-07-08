@@ -401,7 +401,7 @@ public class DepartureResource {
                 // OK nothing collected yet, return default
                 log.debug("capacityAverage - nothing found: " + e.getResponse().getStatus());
             } else {
-                log.error("capacityAverage - something went wrong " + e);
+                log.debug("capacityAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
             log.debug(ex.getMessage());
@@ -432,7 +432,7 @@ public class DepartureResource {
                 // OK nothing collected yet, return default
                 log.debug("vibeAverage - nothing found: " + e.getResponse().getStatus());
             } else {
-                log.error("vibeAverage - something went wrong " + e);
+                log.debug("vibeAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
             log.debug(ex.getMessage());
@@ -457,7 +457,7 @@ public class DepartureResource {
                 // OK nothing collected yet, return default
                 log.debug("capacityAverage - nothing found: " + e.getResponse().getStatus());
             } else {
-                log.error("capacityAverage - something went wrong " + e);
+                log.debug("capacityAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
             log.debug(ex.getMessage());
@@ -482,7 +482,7 @@ public class DepartureResource {
                 // OK nothing collected yet, return default
                 log.debug("vibeAverage - nothing found: " + e.getResponse().getStatus());
             } else {
-                log.error("vibeAverage - something went wrong " + e);
+                log.debug("vibeAverage - something went wrong " + e);
             }
         } catch (Exception ex) {
             log.debug(ex.getMessage());
