@@ -300,7 +300,7 @@ public class DepartureResource {
         if (nextSeconds != null) this.nextSeconds = nextSeconds;
         if (pastSeconds != null) this.pastSeconds = pastSeconds;
 
-        log.info("Retrieving departures by stop using keyword: " + term + " with pastSeconds: " + this.pastSeconds + " nextSeconds: " + this.nextSeconds);
+        log.info("Retrieving departures by stop using keyword: " + term + " with route_type: " + routeType + " and pastSeconds: " + this.pastSeconds + " nextSeconds: " + this.nextSeconds);
 
         Stops stops = new Stops();
         String ckey = String.format("%s-%s-%s-%s", term, this.pastSeconds, this.nextSeconds, routeType);
