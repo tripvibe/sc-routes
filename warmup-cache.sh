@@ -343,4 +343,5 @@ SEARCH=haines?routeType=1
 callSearch
 SEARCH=haines?routeType=2
 callSearch
-
+SEARCH=north%20melbourne?routeType=0
+callSearch
