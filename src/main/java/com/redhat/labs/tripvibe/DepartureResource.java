@@ -466,6 +466,7 @@ public class DepartureResource {
         if (enableCache) {
             capacityCache.put(route_id, cap, 1200, TimeUnit.SECONDS);
         }
+        log.debug("capacityAverage " + route_id + " " + cap);
         return cap;
     }
 
@@ -491,6 +492,7 @@ public class DepartureResource {
         if (enableCache) {
             vibeCache.put(route_id, vib, 1200, TimeUnit.SECONDS);
         }
+        log.debug("vibeAverage " + route_id + " " + vib);
         return vib;
     }
 

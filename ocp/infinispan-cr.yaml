@@ -4,6 +4,6 @@ metadata:
   name: infinispan
 spec:
   container:
-    cpu: 500m
+    cpu: '1'
     memory: 1024Mi
   replicas: 2
