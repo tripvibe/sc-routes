@@ -409,13 +409,13 @@ public class DepartureResource {
         if (enableCache) {
             capacityCache.put(cacheKey, cap, 1200, TimeUnit.SECONDS);
         }
+        log.debug("capacityAverage " + cacheKey + " " + cap);
         return cap;
     }
 
     private Double vibeAverage(String route_id, String route_type, String direction_id, String run_id, String stop_id) {
         Double vib = -1.0;
         String cacheKey = String.format("%s-%s-%s-%s-%s", route_id, route_type, direction_id, run_id, stop_id);
-        log.debug("capacityAverage " + cacheKey);
         if (enableCache && vibeCache.containsKey(cacheKey)) {
             return vibeCache.get(cacheKey);
         }
@@ -440,6 +440,7 @@ public class DepartureResource {
         if (enableCache) {
             vibeCache.put(cacheKey, vib, 1200, TimeUnit.SECONDS);
         }
+        log.debug("vibeAverage " + cacheKey + " " + vib);
         return vib;
     }
 
