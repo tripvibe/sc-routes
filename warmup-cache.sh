@@ -1,13 +1,14 @@
 #!/bin/bash
 
 SCROUTE=https://sc-routes-labs-dev.apps.r2r.vic.apac.rht-labs.com
-DIST=200
+DIST=300
 NEXT=1800
 PAST=0
 
 callLatLong() {
     #http --timeout 240 ${SCROUTE}/api/nearby-departures/${LATLONG}/${DIST}?nextSeconds=${NEXT}\&pastSeconds=${PAST}
-    hey -t 120 -c 5 -n 5 ${SCROUTE}/api/nearby-departures/${LATLONG}/${DIST}?nextSeconds=${NEXT}\&pastSeconds=${PAST}
+    echo hey -t 120 -c 1 -n 1 ${SCROUTE}/api/nearby-departures/${LATLONG}/${DIST}?nextSeconds=${NEXT}\&pastSeconds=${PAST}
+    hey -t 120 -c 1 -n 1 ${SCROUTE}/api/nearby-departures/${LATLONG}/${DIST}?nextSeconds=${NEXT}\&pastSeconds=${PAST}
 }
 
 LATLONG=-37.7968151,144.9507116
@@ -26,6 +27,26 @@ LATLONG=-37.8143622,144.9675997
 callLatLong
 LATLONG=-37.849801,145.145119
 callLatLong
+#LATLONG=-37.808583,144.991311
+#callLatLong
+
+LATLONG=-37.818232,144.946307
+callLatLong
+LATLONG=-37.7988625,144.3552307
+callLatLong
+LATLONG=-37.818232,144.9656682
+callLatLong
+LATLONG=-37.8068268,144.9458954
+callLatLong
+LATLONG=-36.7655744,144.2808542
+callLatLong
+LATLONG=-37.762275,144.9588106
+callLatLong
+LATLONG=-37.7778991,144.9908687
+callLatLong
+LATLONG=-37.7767478,144.9829397
+callLatLong
+
 
 LATLONG=-37.690549,144.8687955
 DIST=300
@@ -40,7 +61,7 @@ NEXT=3600
 callLatLong
 
 LATLONG=-37.7287417,144.9113903
-DIST=1000
+DIST=300
 PAST=600
 NEXT=900
 callLatLong
@@ -100,7 +121,7 @@ NEXT=3600
 callLatLong
 
 LATLONG=-37.79968553361339,144.94618246838454
-DIST=1000
+DIST=300
 PAST=600
 NEXT=900
 callLatLong
@@ -267,11 +288,11 @@ PAST=60
 NEXT=3600
 callLatLong
 
-LATLONG=-37.8104742,144.961135
-DIST=1000
-PAST=600
-NEXT=900
-callLatLong
+#LATLONG=-37.8104742,144.961135
+#DIST=1000
+#PAST=600
+#NEXT=900
+#callLatLong
 
 LATLONG=-37.8104742,144.961135
 DIST=300
@@ -279,11 +300,11 @@ PAST=60
 NEXT=3600
 callLatLong
 
-LATLONG=-37.81421773019899,144.96316093951464
-DIST=1000
-PAST=600
-NEXT=900
-callLatLong
+#LATLONG=-37.81421773019899,144.96316093951464
+#DIST=1000
+#PAST=600
+#NEXT=900
+#callLatLong
 
 LATLONG=-37.81421773019899,144.96316093951464
 DIST=300
@@ -297,11 +318,11 @@ PAST=60
 NEXT=3600
 callLatLong
 
-LATLONG=-37.82748224291528,144.95962377637625
-DIST=1000
-PAST=600
-NEXT=900
-callLatLong
+#LATLONG=-37.82748224291528,144.95962377637625
+#DIST=1000
+#PAST=600
+#NEXT=900
+#callLatLong
 
 LATLONG=-37.82748224291528,144.95962377637625
 DIST=300
@@ -324,7 +345,8 @@ callLatLong
 
 callSearch() {
     #http --timeout 240 ${SCROUTE}/api/search-departures/${SEARCH}
-    hey -t 120 -c 10 -n 10 ${SCROUTE}/api/search-departures/${SEARCH}
+    echo hey -t 120 -c 1 -n 1 ${SCROUTE}/api/search-departures/${SEARCH}
+    hey -t 120 -c 1 -n 1 ${SCROUTE}/api/search-departures/${SEARCH}
 }
 
 SEARCH=central?routeType=2
@@ -347,3 +369,14 @@ SEARCH=haines?routeType=2
 callSearch
 SEARCH=north%20melbourne?routeType=0
 callSearch
+SEARCH=Merri?routeType=0
+callSearch
+SEARCH=Merri?routeType=1
+callSearch
+SEARCH=Merri?routeType=2
+callSearch
+SEARCH=Merri?routeType=3
+callSearch
+SEARCH=139%20Miller%20St?routeType=2
+callSearch
+

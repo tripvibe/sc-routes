@@ -463,7 +463,7 @@ public class DepartureResource {
         } catch (Exception ex) {
             log.debug(ex.getMessage());
         }
-        if (enableCache) {
+        if (enableCache && cap != -1.0) {
             capacityCache.put(route_id, cap, 1200, TimeUnit.SECONDS);
         }
         log.debug("capacityAverage " + route_id + " " + cap);
@@ -489,7 +489,7 @@ public class DepartureResource {
         } catch (Exception ex) {
             log.debug(ex.getMessage());
         }
-        if (enableCache) {
+        if (enableCache && vib != -1.0) {
             vibeCache.put(route_id, vib, 1200, TimeUnit.SECONDS);
         }
         log.debug("vibeAverage " + route_id + " " + vib);
