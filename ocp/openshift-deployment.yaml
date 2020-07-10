@@ -1,0 +1,173 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  labels:
+    app: sc-routes
+    app.kubernetes.io/component: sc-routes
+    app.kubernetes.io/instance: sc-routes
+  name: sc-routes
+spec:
+  lookupPolicy:
+    local: false
+  tags:
+    - annotations:
+        openshift.io/imported-from: quay.io/eformat/sc-routes:latest
+      from:
+        kind: DockerImage
+        name: quay.io/eformat/sc-routes:latest
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: Source
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: sc-routes
+    app.kubernetes.io/component: sc-routes
+    app.kubernetes.io/instance: sc-routes
+  name: sc-routes
+spec:
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+  selector:
+    deploymentconfig: sc-routes
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    app.kubernetes.io/part-of: tripvibe
+    app.openshift.io/connects-to: infinispan
+  labels:
+    app: sc-routes
+    app.kubernetes.io/component: sc-routes
+    app.kubernetes.io/instance: sc-routes
+    app.kubernetes.io/part-of: tripvibe
+  name: sc-routes
+spec:
+  replicas: 2
+  selector:
+    deploymentconfig: sc-routes
+  strategy:
+    activeDeadlineSeconds: 21600
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      labels:
+        deploymentconfig: sc-routes
+    spec:
+      containers:
+      - env:
+        - name: INFINISPAN_REALM
+          valueFrom:
+            secretKeyRef:
+              key: INFINISPAN_REALM
+              name: sc-routes
+        - name: INFINISPAN_USER
+          valueFrom:
+            secretKeyRef:
+              key: INFINISPAN_USER
+              name: sc-routes
+        - name: APIKEY
+          valueFrom:
+            secretKeyRef:
+              key: APIKEY
+              name: sc-routes
+        - name: DEVID
+          valueFrom:
+            secretKeyRef:
+              key: DEVID
+              name: sc-routes
+        - name: INFINISPAN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: INFINISPAN_PASSWORD
+              name: sc-routes
+        image: ' '
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 3
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: sc-routes
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+  test: false
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - sc-routes
+      from:
+        kind: ImageStreamTag
+        name: sc-routes:latest
+      lastTriggeredImage: quay.io/eformat/sc-routes:latest
+    type: ImageChange
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    app.openshift.io/connects-to: infinispan
+  labels:
+    app: sc-routes
+    app.kubernetes.io/component: sc-routes
+    app.kubernetes.io/instance: sc-routes
+  name: sc-routes
+spec:
+  port:
+    targetPort: 8080-tcp
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  to:
+    kind: Service
+    name: sc-routes
+    weight: 100
+  wildcardPolicy: None
