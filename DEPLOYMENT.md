@@ -94,6 +94,7 @@ oc get route sc-routes
 ![images/routes-near-me.png](images/routes-near-me.png)
 
 Swagger available for `tv-submit` and `sc-route` URL's, append `/swagger-ui`
+![images/tv-swagger.png](images/tv-swagger.png)
 
 ### Tips'n'Tricks
 
