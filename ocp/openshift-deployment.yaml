@@ -11,7 +11,7 @@ spec:
     local: false
   tags:
     - annotations:
-        openshift.io/imported-from: quay.io/eformat/sc-routes:latest
+        openshift.io/imported-from: quay.io/eformat/sc-routes:1.0
       from:
         kind: DockerImage
         name: quay.io/eformat/sc-routes:latest
@@ -147,7 +147,7 @@ spec:
       from:
         kind: ImageStreamTag
         name: sc-routes:latest
-      lastTriggeredImage: quay.io/eformat/sc-routes:latest
+      lastTriggeredImage: quay.io/eformat/sc-routes:1.0
     type: ImageChange
 ---
 apiVersion: route.openshift.io/v1
