@@ -44,6 +44,7 @@ oc create -f https://raw.githubusercontent.com/eformat/tv-submit/master/ocp/open
 Deploy Infinispan cluster, Infinispan 1.1.2 (stable) operator, infinispan 10.1.7.Final, deployed in namespace scope
 ```bash
 oc create -f https://raw.githubusercontent.com/eformat/sc-routes/master/ocp/infinispan-operatorgroup.yaml
+oc patch og sc-routes-dev --type='json' -p='[{"op": "replace", "path": "/spec/targetNamespaces", "value":["tripvibe"]}]'
 oc create -f https://raw.githubusercontent.com/eformat/sc-routes/master/ocp/infinispan-subscription.yaml
 oc create -f https://raw.githubusercontent.com/eformat/sc-routes/master/ocp/infinispan-cr.yaml
 ```

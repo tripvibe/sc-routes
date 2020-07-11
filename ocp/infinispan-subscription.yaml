@@ -3,10 +3,10 @@ kind: Subscription
 metadata:
   name: infinispan
 spec:
-  channel: 2.0.x
+  channel: stable
   installPlanApproval: Automatic
   name: infinispan
   source: community-operators
   sourceNamespace: openshift-marketplace
-  startingCSV: infinispan-operator.v2.0.1
+  startingCSV: infinispan-operator.v1.1.2
 
