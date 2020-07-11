@@ -26,7 +26,6 @@ This method makes use of pre-deployed CI/CD tooling from the [Ubiquitous Journey
 Tested using these prerequisites
 - OpenShift 4.4 cluster
 - Strimzi 0.18 operator deployed at cluster scope
-- Infinispan 1.1.2 (stable) operator, infinispan 10.1.7.Final, deployed in namespace (tripvibe) scope
 - Working dynamic storage class provisioner (gp2, RWO)
 - PTV API developer user/password for https://timetableapi.ptv.vic.gov.au
 
@@ -42,8 +41,10 @@ Deploy Kafka cluster, tv-submit, materlialize
 oc create -f https://raw.githubusercontent.com/eformat/tv-submit/master/ocp/openshift-deployment.yml
 ```
 
-Deploy Infinispan cluster
+Deploy Infinispan cluster, Infinispan 1.1.2 (stable) operator, infinispan 10.1.7.Final, deployed in namespace scope
 ```bash
+oc create -f https://raw.githubusercontent.com/eformat/sc-routes/master/ocp/infinispan-operatorgroup.yaml
+oc create -f https://raw.githubusercontent.com/eformat/sc-routes/master/ocp/infinispan-subscription.yaml
 oc create -f https://raw.githubusercontent.com/eformat/sc-routes/master/ocp/infinispan-cr.yaml
 ```
 
