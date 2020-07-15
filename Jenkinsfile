@@ -113,13 +113,13 @@ pipeline {
 
                             echo '### Running build ###'
                             sh '''                            
-                            mvn package -DskipTests -s ocp/settings.xml
+                            mvn package -DskipTests -s ocp/settings.xml -Pnative
                             
                             oc get bc ${APP_NAME} || rc=$?
                             if [ $rc -eq 1 ]; then
                                 echo " 🏗 no build - creating one 🏗"
                                 oc new-build --binary --name=${APP_NAME} -l app=${APP_NAME} --strategy=docker --dry-run -o yaml > /tmp/bc.yaml
-                                yq w -i /tmp/bc.yaml items[1].spec.strategy.dockerStrategy.dockerfilePath Dockerfile.jvm
+                                yq w -i /tmp/bc.yaml items[1].spec.strategy.dockerStrategy.dockerfilePath Dockerfile.native
                                 oc apply -f /tmp/bc.yaml
                                 oc patch bc/${APP_NAME} -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                             fi
@@ -166,24 +166,23 @@ pipeline {
             steps {
                 script {
                     sh '''
-                       #oc tag ${APP_NAME}:latest ${TARGET_NAMESPACE}/${APP_NAME}:latest
-                       #oc -n ${TARGET_NAMESPACE} get dc ${APP_NAME} || rc=$?
-                       #if [ $rc -eq 1 ]; then
-                       #     echo " 🏗 no deployment found - creating 🏗"
-                       #     oc -n ${TARGET_NAMESPACE} new-app ${APP_NAME} --as-deployment-config
-                       #     oc -n ${TARGET_NAMESPACE} set env --from=secret/${APP_NAME} dc/${APP_NAME}
-                       #     oc -n ${TARGET_NAMESPACE} set probe dc/${APP_NAME} --liveness --get-url=http://:8080/health --initial-delay-seconds=3 --timeout-seconds=1
-                       #     oc -n ${TARGET_NAMESPACE} set probe dc/${APP_NAME} --readiness --get-url=http://:8080/health --initial-delay-seconds=5 --timeout-seconds=1
-                       #     oc -n ${TARGET_NAMESPACE} scale dc/${APP_NAME} --replicas=2
-                       #fi
-                       #echo " 🏗 found pod waiting for deployment 🏗"                       
-                       #oc -n ${TARGET_NAMESPACE} wait dc -l app=${APP_NAME} --for=condition=Available --timeout=300s
-                       # 
-                       #oc -n ${TARGET_NAMESPACE} get route ${APP_NAME} || rc=$?
-                       #if [ $rc -eq 1 ]; then
-                       #    oc -n ${TARGET_NAMESPACE} expose svc/${APP_NAME}
-                       #    oc patch route/${APP_NAME} --type=json -p '[{"op":"add", "path":"/spec/tls", "value":{"termination":"edge","insecureEdgeTerminationPolicy":"Redirect"}}]'
-                       #fi
+                       oc tag ${APP_NAME}:latest ${TARGET_NAMESPACE}/${APP_NAME}:latest
+                       oc -n ${TARGET_NAMESPACE} get dc ${APP_NAME} || rc=$?
+                       if [ $rc -eq 1 ]; then
+                            echo " 🏗 no deployment found - creating 🏗"
+                            oc -n ${TARGET_NAMESPACE} new-app ${APP_NAME} --as-deployment-config
+                            oc -n ${TARGET_NAMESPACE} set env --from=secret/${APP_NAME} dc/${APP_NAME}
+                            oc -n ${TARGET_NAMESPACE} set probe dc/${APP_NAME} --liveness --get-url=http://:8080/health --initial-delay-seconds=3 --timeout-seconds=1
+                            oc -n ${TARGET_NAMESPACE} set probe dc/${APP_NAME} --readiness --get-url=http://:8080/health --initial-delay-seconds=5 --timeout-seconds=1
+                            oc -n ${TARGET_NAMESPACE} scale dc/${APP_NAME} --replicas=2
+                       fi
+                       echo " 🏗 found pod waiting for deployment 🏗"                       
+                       oc -n ${TARGET_NAMESPACE} wait dc -l app=${APP_NAME} --for=condition=Available --timeout=300s                        
+                       oc -n ${TARGET_NAMESPACE} get route ${APP_NAME} || rc=$?
+                       if [ $rc -eq 1 ]; then
+                           oc -n ${TARGET_NAMESPACE} expose svc/${APP_NAME}
+                           oc patch route/${APP_NAME} --type=json -p '[{"op":"add", "path":"/spec/tls", "value":{"termination":"edge","insecureEdgeTerminationPolicy":"Redirect"}}]'
+                       fi
                     '''
                 }
             }
