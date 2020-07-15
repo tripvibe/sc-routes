@@ -11,9 +11,9 @@ import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.infinispan.client.hotrod.DefaultTemplate;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.commons.configuration.XMLStringConfiguration;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.jboss.resteasy.annotations.jaxrs.QueryParam;
 import org.slf4j.Logger;
@@ -95,17 +95,21 @@ public class DepartureResource {
     RemoteCache<String, TripVibeDAO> tripVibeDAOCache;
     RemoteCache<String, DepartureDAO> departureDAOCache;
 
+    private static final String CACHE_CONFIG = "<infinispan><cache-container>" +
+            "<distributed-cache name=\"%s\" mode=\"ASYNC\"></distributed-cache>" +
+            "</cache-container></infinispan>";
+
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         if (!enableCache) return;
         log.info("On start - get caches");
-        routesCache = cacheManager.administration().getOrCreateCache("routesCache", DefaultTemplate.REPL_ASYNC);
-        directionsCache = cacheManager.administration().getOrCreateCache("directionsCache", DefaultTemplate.REPL_ASYNC);
-        vibeCache = cacheManager.administration().getOrCreateCache("vibeCache", DefaultTemplate.REPL_ASYNC);
-        capacityCache = cacheManager.administration().getOrCreateCache("capacityCache", DefaultTemplate.REPL_ASYNC);
-        stopsCache = cacheManager.administration().getOrCreateCache("stopsCache", DefaultTemplate.REPL_ASYNC);
-        searchCache = cacheManager.administration().getOrCreateCache("searchCache", DefaultTemplate.REPL_ASYNC);
-        tripVibeDAOCache = cacheManager.administration().getOrCreateCache("tripVibeDAOCache", DefaultTemplate.REPL_ASYNC);
-        departureDAOCache = cacheManager.administration().getOrCreateCache("departureDAOCache", DefaultTemplate.REPL_ASYNC);
+        routesCache = cacheManager.administration().getOrCreateCache("routesCache", new XMLStringConfiguration(String.format(CACHE_CONFIG, "routesCache")));
+        directionsCache = cacheManager.administration().getOrCreateCache("directionsCache", new XMLStringConfiguration(String.format(CACHE_CONFIG, "directionsCache")));
+        vibeCache = cacheManager.administration().getOrCreateCache("vibeCache", new XMLStringConfiguration(String.format(CACHE_CONFIG, "vibeCache")));
+        capacityCache = cacheManager.administration().getOrCreateCache("capacityCache", new XMLStringConfiguration(String.format(CACHE_CONFIG, "capacityCache")));
+        stopsCache = cacheManager.administration().getOrCreateCache("stopsCache", new XMLStringConfiguration(String.format(CACHE_CONFIG, "stopsCache")));
+        searchCache = cacheManager.administration().getOrCreateCache("searchCache", new XMLStringConfiguration(String.format(CACHE_CONFIG, "searchCache")));
+        tripVibeDAOCache = cacheManager.administration().getOrCreateCache("tripVibeDAOCache", new XMLStringConfiguration(String.format(CACHE_CONFIG, "tripVibeDAOCache")));
+        departureDAOCache = cacheManager.administration().getOrCreateCache("departureDAOCache", new XMLStringConfiguration(String.format(CACHE_CONFIG, "departureDAOCache")));
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 

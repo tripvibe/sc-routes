@@ -11,9 +11,9 @@ import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.infinispan.client.hotrod.DefaultTemplate;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.commons.configuration.XMLStringConfiguration;
 import org.jboss.resteasy.annotations.SseElementType;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.json.JSONArray;
@@ -123,11 +123,15 @@ public class RoutesResource {
     @Remote("departureDAOCache")
     RemoteCache<RouteDirectionCacheKey, DepartureDAO> departureDAOCache;
 
+    private static final String CACHE_CONFIG = "<infinispan><cache-container>" +
+            "<distributed-cache name=\"%s\" mode=\"ASYNC\"></distributed-cache>" +
+            "</cache-container></infinispan>";
+
     void onStart(@Observes @Priority(value = 1) StartupEvent ev) {
         log.info("On start - get caches");
-        routeTypeCache = cacheManager.administration().getOrCreateCache("routeType", DefaultTemplate.REPL_ASYNC);
-        routeNameNumberCache = cacheManager.administration().getOrCreateCache("routeNameNumber", DefaultTemplate.REPL_ASYNC);
-        directionNameCache = cacheManager.administration().getOrCreateCache("directionName", DefaultTemplate.REPL_ASYNC);
+        routeTypeCache = cacheManager.administration().getOrCreateCache("routeType", new XMLStringConfiguration(String.format(CACHE_CONFIG, "routeType")));
+        routeNameNumberCache = cacheManager.administration().getOrCreateCache("routeNameNumber", new XMLStringConfiguration(String.format(CACHE_CONFIG, "routeNameNumber")));
+        directionNameCache = cacheManager.administration().getOrCreateCache("directionName", new XMLStringConfiguration(String.format(CACHE_CONFIG, "directionName")));
         log.info("Existing stores are " + cacheManager.getCacheNames().toString());
     }
 
