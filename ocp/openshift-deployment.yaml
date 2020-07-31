@@ -147,7 +147,7 @@ spec:
       from:
         kind: ImageStreamTag
         name: sc-routes:latest
-      lastTriggeredImage: quay.io/eformat/sc-routes:1.0
+      lastTriggeredImage: quay.io/eformat/sc-routes:latest
     type: ImageChange
 ---
 apiVersion: route.openshift.io/v1
