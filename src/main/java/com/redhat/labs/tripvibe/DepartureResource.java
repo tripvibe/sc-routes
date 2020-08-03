@@ -28,7 +28,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -378,40 +377,26 @@ public class DepartureResource {
     }
 
     /*
-    -- average vibe + capacity algorithm
-        (1) try most restrictive (route_id, route_type, direction_id, run_id, stop_id)
+        average vibe + capacity algorithm
+        (1) try by trip (route_id, route_type, direction_id, run_id, stop_id)
         (2) then by (route_id)
 
-        -- if we want to explore
-        (3) also between time is available
-        (4) and/or any combination of the above
+        r1 - keyed by route_id, rolling 1min avg
+        r5 - keyed by route_id, rolling 5min avg
+        t1 - keyed by trip ids, rolling 1min avg
+        t5 - keyed by trip ids, rolling 5min avg
     */
     private Double capacityAverage(String route_id, String route_type, String direction_id, String run_id, String stop_id) {
         Double cap = -1.0;
-        String cacheKey = String.format("%s-%s-%s-%s-%s", route_id, route_type, direction_id, run_id, stop_id);
+        String cacheKey = String.format("%s-%s-%s-%s-%s-%s", "t1", route_id, route_type, direction_id, run_id, stop_id);
         if (enableCache && capacityCache.containsKey(cacheKey)) {
-            return capacityCache.get(cacheKey);
+            cap = capacityCache.get(cacheKey);
+            log.debug("capacityAverage " + cacheKey + " " + cap);
+            return cap;
         }
-        try {
-            Double ret = submitQueryService.avgCapacityAllID(route_id, route_type, direction_id, run_id, stop_id);
-            if (null != ret) {
-                cap = ret;
-            } else {
-                cap = capacityAverage(route_id);
-            }
-        } catch (javax.ws.rs.WebApplicationException e) {
-            if (e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()
-                    || e.getResponse().getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
-                // OK nothing collected yet, return default
-                log.debug("capacityAverage - nothing found: " + e.getResponse().getStatus());
-            } else {
-                log.debug("capacityAverage - something went wrong " + e);
-            }
-        } catch (Exception ex) {
-            log.debug(ex.getMessage());
-        }
-        if (enableCache) {
-            capacityCache.put(cacheKey, cap, 1200, TimeUnit.SECONDS);
+        cacheKey = String.format("%s-%s", "r1", route_id);
+        if (enableCache && cap == -1.0 && capacityCache.containsKey(cacheKey)) {
+            cap = capacityCache.get(cacheKey);
         }
         log.debug("capacityAverage " + cacheKey + " " + cap);
         return cap;
@@ -419,84 +404,17 @@ public class DepartureResource {
 
     private Double vibeAverage(String route_id, String route_type, String direction_id, String run_id, String stop_id) {
         Double vib = -1.0;
-        String cacheKey = String.format("%s-%s-%s-%s-%s", route_id, route_type, direction_id, run_id, stop_id);
+        String cacheKey = String.format("%s-%s-%s-%s-%s-%s", "t1", route_id, route_type, direction_id, run_id, stop_id);
         if (enableCache && vibeCache.containsKey(cacheKey)) {
-            return vibeCache.get(cacheKey);
+            vib = vibeCache.get(cacheKey);
+            log.debug("vibeAverage " + cacheKey + " " + vib);
+            return vib;
         }
-        try {
-            Double ret = submitQueryService.avgVibeAllID(route_id, route_type, direction_id, run_id, stop_id);
-            if (null != ret) {
-                vib = ret;
-            } else {
-                vib = vibeAverage(route_id);
-            }
-        } catch (javax.ws.rs.WebApplicationException e) {
-            if (e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()
-                    || e.getResponse().getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
-                // OK nothing collected yet, return default
-                log.debug("vibeAverage - nothing found: " + e.getResponse().getStatus());
-            } else {
-                log.debug("vibeAverage - something went wrong " + e);
-            }
-        } catch (Exception ex) {
-            log.debug(ex.getMessage());
-        }
-        if (enableCache) {
-            vibeCache.put(cacheKey, vib, 1200, TimeUnit.SECONDS);
+        cacheKey = String.format("%s-%s", "r1", route_id);
+        if (enableCache && vib == -1.0 && vibeCache.containsKey(cacheKey)) {
+            vib = vibeCache.get(cacheKey);
         }
         log.debug("vibeAverage " + cacheKey + " " + vib);
-        return vib;
-    }
-
-    private Double capacityAverage(String route_id) {
-        Double cap = -1.0;
-        if (enableCache && capacityCache.containsKey(route_id)) {
-            return capacityCache.get(route_id);
-        }
-        try {
-            Double ret = submitQueryService.capacityAverage(route_id);
-            if (null != ret) cap = ret;
-        } catch (javax.ws.rs.WebApplicationException e) {
-            if (e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()
-                    || e.getResponse().getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
-                // OK nothing collected yet, return default
-                log.debug("capacityAverage - nothing found: " + e.getResponse().getStatus());
-            } else {
-                log.debug("capacityAverage - something went wrong " + e);
-            }
-        } catch (Exception ex) {
-            log.debug(ex.getMessage());
-        }
-        if (enableCache && cap != -1.0) {
-            capacityCache.put(route_id, cap, 1200, TimeUnit.SECONDS);
-        }
-        log.debug("capacityAverage " + route_id + " " + cap);
-        return cap;
-    }
-
-    private Double vibeAverage(String route_id) {
-        Double vib = -1.0;
-        if (enableCache && vibeCache.containsKey(route_id)) {
-            return vibeCache.get(route_id);
-        }
-        try {
-            Double ret = submitQueryService.vibeAverage(route_id);
-            if (null != ret) vib = ret;
-        } catch (javax.ws.rs.WebApplicationException e) {
-            if (e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()
-                    || e.getResponse().getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
-                // OK nothing collected yet, return default
-                log.debug("vibeAverage - nothing found: " + e.getResponse().getStatus());
-            } else {
-                log.debug("vibeAverage - something went wrong " + e);
-            }
-        } catch (Exception ex) {
-            log.debug(ex.getMessage());
-        }
-        if (enableCache && vib != -1.0) {
-            vibeCache.put(route_id, vib, 1200, TimeUnit.SECONDS);
-        }
-        log.debug("vibeAverage " + route_id + " " + vib);
         return vib;
     }
 
