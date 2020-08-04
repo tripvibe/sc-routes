@@ -1,6 +1,6 @@
 # tripvibe deployment
 
-![images/tripvibe-arch2.png](images/tripvibe-arch2.png)
+![images/tripvibe-arch.png](images/tripvibe-arch.png)
 
 Tripvibe consists of the following services and applications:
 
@@ -13,9 +13,7 @@ Tripvibe consists of the following services and applications:
 
 ## OpenShift Deployment
 
-Note: this describes process for images tagged version :latest in quay.io
-
-See version 1.0 of this document for previous versions.
+Note: this describes process for images tagged version :1.0 in quay.io
 
 ### Jenkins
 
@@ -28,8 +26,8 @@ This method makes use of pre-deployed CI/CD tooling from the [Ubiquitous Journey
 ### Manual CLI Method 
 
 Tested using these prerequisites
-- OpenShift 4.5+ cluster
-- Strimzi 0.19 operator deployed at cluster scope
+- OpenShift 4.4 cluster
+- Strimzi 0.18 operator deployed at cluster scope
 - Working dynamic storage class provisioner (gp2, RWO)
 - PTV API developer user/password for https://timetableapi.ptv.vic.gov.au
 
@@ -53,11 +51,6 @@ oc create -f https://raw.githubusercontent.com/eformat/sc-routes/master/ocp/infi
 oc create -f https://raw.githubusercontent.com/eformat/sc-routes/master/ocp/infinispan-cr.yaml
 ```
 
-Wait for `infinispan-0` pod to start
-```bash
-oc wait pod/infinispan-0 --for=condition=Ready --timeout=300s
-```
-
 Generate secret for sc-routes. This contains PTV API user/password and Infinispan username/password:
 ```bash
 cat <<EOF | oc apply -f -
@@ -77,16 +70,6 @@ EOF
 Deploy sc-routes
 ```bash
 oc create -f https://raw.githubusercontent.com/eformat/sc-routes/master/ocp/openshift-deployment.yaml
-```
-
-Deploy tv-streams
-```bash
-oc create -f https://raw.githubusercontent.com/eformat/tv-streams/master/openshift-deployment.yaml
-```
-
-Deploy tv-query
-```bash
-oc create -f https://raw.githubusercontent.com/eformat/tv-query/master/openshift-deployment.yaml
 ```
 
 Deploy tripvibe
@@ -114,8 +97,8 @@ oc get route sc-routes
 ```
 ![images/routes-near-me.png](images/routes-near-me.png)
 
-Swagger available for `tv-query` and `sc-route` URL's, append `/swagger-ui`
-![images/tv-swagger2.png](images/tv-swagger2.png)
+Swagger available for `tv-submit` and `sc-route` URL's, append `/swagger-ui`
+![images/tv-swagger.png](images/tv-swagger.png)
 
 ### Tips'n'Tricks
 
@@ -140,11 +123,10 @@ psql -h localhost -p 6875 materialize
 > select * from ROUTEALL;
 ```
 
-To reset submission data you need to clear out Kafka topics and restart materialize:
+To reset submission data you need to clear out Kafka topic and restart materialize:
 ```bash
-# delete kafka topics
+# delete kafka topic
 oc exec tv-cluster-kafka-0 -- /opt/kafka/bin/kafka-topics.sh --bootstrap-server tv-cluster-kafka-bootstrap:9092 --delete --topic tripvibe
-oc exec tv-cluster-kafka-0 -- /opt/kafka/bin/kafka-topics.sh --bootstrap-server tv-cluster-kafka-bootstrap:9092 --delete --topic tripvibe2
 # restart materlialize pods
 oc delete pods materialize-0 materialize-1
 ``` 
