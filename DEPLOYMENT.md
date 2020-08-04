@@ -7,8 +7,10 @@ Tripvibe consists of the following services and applications:
 - UI (angular, nginx) - https://github.com/rossbrigoli/tripvibe
 - Submit API (quarkus java) - https://github.com/eformat/tv-submit
 - Routes API (quarkus java) - https://github.com/eformat/sc-routes
+- Query API (quarkus java) - https://github.com/eformat/tv-query
 - Cache - https://infinispan.org
-- Kafka - https://strimzi.io
+- Kafka Cluster - https://strimzi.io
+- Kafka Streams - https://github.com/eformat/tv-streams
 - Streaming Data Warehouse - https://materialize.io
 
 ## OpenShift Deployment
