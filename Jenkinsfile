@@ -113,13 +113,13 @@ pipeline {
 
                             echo '### Running build ###'
                             sh '''                            
-                            mvn package -DskipTests -s ocp/settings.xml
+                            mvn package -DskipTests -s ocp/settings.xml -Pnative
                             
                             oc get bc ${APP_NAME} || rc=$?
                             if [ $rc -eq 1 ]; then
                                 echo " 🏗 no build - creating one 🏗"
                                 oc new-build --binary --name=${APP_NAME} -l app=${APP_NAME} --strategy=docker --dry-run -o yaml > /tmp/bc.yaml
-                                yq w -i /tmp/bc.yaml items[1].spec.strategy.dockerStrategy.dockerfilePath Dockerfile.jvm
+                                yq w -i /tmp/bc.yaml items[1].spec.strategy.dockerStrategy.dockerfilePath Dockerfile.native
                                 oc apply -f /tmp/bc.yaml
                                 oc patch bc/${APP_NAME} -p '{"spec":{ "runPolicy": "Parallel"}}' --type=strategic
                             fi
