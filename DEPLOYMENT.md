@@ -44,7 +44,7 @@ oc new-project tripvibe
 
 Deploy Kafka cluster, tv-submit, materlialize
 ```bash
-oc create -f https://raw.githubusercontent.com/eformat/tv-submit/master/ocp/openshift-deployment.yml
+oc create -f https://raw.githubusercontent.com/eformat/tv-submit/master/ocp/openshift-deployment.yaml
 ```
 
 Deploy Infinispan cluster, Infinispan 1.1.2 (stable) operator, infinispan 10.1.7.Final, deployed in namespace scope
