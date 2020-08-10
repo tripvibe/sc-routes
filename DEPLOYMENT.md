@@ -83,12 +83,12 @@ oc create -f https://raw.githubusercontent.com/eformat/sc-routes/master/ocp/open
 
 Deploy tv-streams
 ```bash
-oc create -f https://raw.githubusercontent.com/eformat/tv-streams/master/openshift-deployment.yaml
+oc create -f https://raw.githubusercontent.com/eformat/tv-streams/master/ocp/openshift-deployment.yaml
 ```
 
 Deploy tv-query
 ```bash
-oc create -f https://raw.githubusercontent.com/eformat/tv-query/master/openshift-deployment.yaml
+oc create -f https://raw.githubusercontent.com/eformat/tv-query/master/ocp/openshift-deployment.yaml
 ```
 
 Deploy tripvibe
