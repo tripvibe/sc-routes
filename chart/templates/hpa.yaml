@@ -1,0 +1,21 @@
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "sc-routes.fullname" . }}
+  labels:
+    {{- include "sc-routes.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: v1
+    kind: DecploymentConfig
+    name: {{ include "sc-routes.fullname" . }}
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageValue: 500m
