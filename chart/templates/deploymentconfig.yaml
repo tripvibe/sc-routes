@@ -34,8 +34,33 @@ spec:
     spec:
       containers:
         - env:
-            - name: KAFKA_BOOTSTRAP
-              value: "tv-cluster-kafka-bootstrap:9092"
+            - name: APIKEY
+              valueFrom:
+                secretKeyRef:
+                  key: APIKEY
+                  name: sc-routes
+            - name: DEVID
+              valueFrom:
+                secretKeyRef:
+                  key: DEVID
+                  name: sc-routes
+            - name: INFINISPAN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: INFINISPAN_PASSWORD
+                  name: sc-routes
+            - name: INFINISPAN_REALM
+              valueFrom:
+                secretKeyRef:
+                  key: INFINISPAN_REALM
+                  name: sc-routes
+            - name: INFINISPAN_USER
+              valueFrom:
+                secretKeyRef:
+                  key: INFINISPAN_USER
+                  name: sc-routes
+            - name: QUARKUS_PROFILE
+              value: prod
           image: ''
           imagePullPolicy: Always
           name: {{ include "sc-routes.name" . }}
