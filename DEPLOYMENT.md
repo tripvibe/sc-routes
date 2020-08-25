@@ -150,4 +150,3 @@ oc exec tv-cluster-kafka-0 -- /opt/kafka/bin/kafka-topics.sh --bootstrap-server 
 # restart materlialize pods
 oc delete pods materialize-0 materialize-1
 ``` 
-
