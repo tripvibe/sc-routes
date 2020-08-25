@@ -2,7 +2,7 @@ route: true
 deploymentConfig: true
 replicas:
   min: 2
-  max: 10
+  max: 20
 image_repository: quay.io
 image_name: sc-routes
 image_namespace: eformat
