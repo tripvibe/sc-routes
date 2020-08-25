@@ -8,7 +8,7 @@ metadata:
 spec:
   scaleTargetRef:
     apiVersion: v1
-    kind: DecploymentConfig
+    kind: DeploymentConfig
     name: {{ include "sc-routes.fullname" . }}
   minReplicas: 2
   maxReplicas: 10
