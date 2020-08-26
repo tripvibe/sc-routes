@@ -5,6 +5,9 @@ import com.redhat.labs.tripvibe.rest.SubmitQueryService;
 import com.redhat.labs.tripvibe.services.*;
 import com.redhat.labs.tripvibe.util.Signature;
 import io.quarkus.runtime.StartupEvent;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
@@ -49,7 +52,7 @@ public class DepartureResource {
     public static Map<String, Instant> localDirectionsCacheAge = new HashMap<>();
     private Integer maxCacheAgeHour = 24; //keep the cached objects upto 24 hours
     // use to retrieve departures for the next 2 hours
-    private int nextSeconds = 3600*2;
+    private int nextSeconds = 3600 * 2;
     private int pastSeconds = 0;
 
     @Inject
@@ -155,63 +158,31 @@ public class DepartureResource {
         } else {
             Set<Stop> st = stopsService.stops(latlong, distance, devid, signature.generate("/v3/stops/location/" + latlong + "?max_distance=" + distance)).getStops();
             stops.setStops(st);
+            if (stops.getStops().size() == 0) {
+                return new HashSet<>(); // No stops nearby, return immediately
+            } else {
+                stopsCache.put(lldkey, stops, 2, TimeUnit.HOURS);
+            }
         }
         log.info("Stops count : " + stops.getStops().size());
-        if (stops.getStops().size() == 0) {
-            return new HashSet<>(); // No stops nearby, return immediately
-        }
         if (enableCache) {
-            stopsCache.put(lldkey, stops, 2, TimeUnit.HOURS);
             printCacheSizes();
         }
 
         HashSet<TripVibeDAO> nearbyDepartures = new HashSet<TripVibeDAO>();
-        Instant utcNow = Instant.now();
 
-        stops.getStops().parallelStream().forEach(stop -> {
-            List<Departure> depList = Multi.createFrom().iterable(getDepartures(stop)).transform()
-                    .byFilteringItemsWith(
-                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastSeconds, ChronoUnit.SECONDS))
-                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextSeconds, ChronoUnit.SECONDS)))
-                    .collectItems().asList().await().indefinitely();
-            Set<Departure> departures = convertListToSet(depList);
-            log.debug("Departures count : " + departures.size());
-
-            if (!departures.isEmpty()) {
-                Set<TripVibeDAO> nearby = departures.stream().map(dep -> {
-                    String cacheKey = String.format("%s-%s-%s-%s-%s-%s", dep.getRoute_id().toString(), stop.getRoute_type(), dep.getDirection_id().toString(), dep.getRun_id(), dep.getStop_id(), dep.getScheduled_departure_utc().toString());
-                    if (enableCache && tripVibeDAOCache.containsKey(cacheKey)) {
-                        return tripVibeDAOCache.get(cacheKey);
-                    }
-                    Route route = getRouteById(dep.getRoute_id());
-                    Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.getRoute_type());
-                    if (null == route || null == direction) {
-                        return null;
-                    }
-                    TripVibeDAO t = new TripVibeDAO(
-                            route.getRoute_name(),
-                            route.getRoute_number(),
-                            direction.getDirection_name(),
-                            stop.getStop_name(),
-                            dep.getScheduled_departure_utc().toString(),
-                            getRouteTypeName(stop.getRoute_type()),
-                            dep.getAt_platform(),
-                            dep.getEstimated_departure_utc() == null ? null : dep.getEstimated_departure_utc().toString(),
-                            dep.getPlatform_number() == null ? null : dep.getPlatform_number().toString(),
-                            dep.getRoute_id(),
-                            dep.getStop_id(),
-                            dep.getRun_id(),
-                            dep.getDirection_id(),
-                            capacityAverage(dep.getRoute_id().toString(), stop.getRoute_type().toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()),
-                            vibeAverage(dep.getRoute_id().toString(), stop.getRoute_type().toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()));
-                    if (enableCache) {
-                        tripVibeDAOCache.put(cacheKey, t, 60, TimeUnit.SECONDS);
-                    }
-                    return t;
-                }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
-                nearbyDepartures.addAll(nearby);
-            }
-        });
+        // parallel calls for destinations per stop
+        final List<Single<Set<TripVibeDAO>>> listOfSingles = Collections.synchronizedList(new ArrayList<>());
+        stops.getStops().forEach(
+                stop -> {
+                    final Single<Set<TripVibeDAO>> responseSingle = Single.fromCallable(() -> {
+                        return _tripvibeDAO(stop);
+                    }).subscribeOn(Schedulers.io());
+                    listOfSingles.add(responseSingle);
+                }
+        );
+        Flowable<Set<TripVibeDAO>> last = Single.merge(listOfSingles);
+        last.blockingForEach(s -> nearbyDepartures.addAll(s));
 
         log.info("Nearby departures returning count: " + nearbyDepartures.size());
         return nearbyDepartures;
@@ -299,7 +270,8 @@ public class DepartureResource {
             description = "This operation allows you to get all nearby departures based on search_term\",",
             deprecated = false,
             hidden = false)
-    public Set<DepartureDAO> searchDepartures(@PathParam String term, @QueryParam int routeType, @DefaultValue("0") @QueryParam Integer pastSeconds, @QueryParam Integer nextSeconds) {
+    public Set<DepartureDAO> searchDepartures(@PathParam String term, @QueryParam int routeType,
+                                              @DefaultValue("0") @QueryParam Integer pastSeconds, @QueryParam Integer nextSeconds) {
 
         if (nextSeconds != null) this.nextSeconds = nextSeconds;
         if (pastSeconds != null) this.pastSeconds = pastSeconds;
@@ -326,51 +298,19 @@ public class DepartureResource {
         }
 
         HashSet<DepartureDAO> nearbyDepartures = new HashSet<DepartureDAO>();
-        Instant utcNow = Instant.now();
 
-        stops.getStops().parallelStream().forEach(stop -> {
-            List<Departure> depList = Multi.createFrom().iterable(getDepartures(stop)).transform()
-                    .byFilteringItemsWith(
-                            dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastSeconds, ChronoUnit.SECONDS))
-                                    && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextSeconds, ChronoUnit.SECONDS)))
-                    .collectItems().asList().await().indefinitely();
-            Set<Departure> departures = convertListToSet(depList);
-            log.debug("Departure count: " + departures.size());
-
-            if (!departures.isEmpty()) {
-                Set<DepartureDAO> nearby = departures.stream().map(dep -> {
-                    String cacheKey = String.format("%s-%s-%s-%s-%s-%s", dep.getRoute_id().toString(), stop.getRoute_type(), dep.getDirection_id().toString(), dep.getRun_id(), dep.getStop_id(), dep.getScheduled_departure_utc().toString());
-                    if (enableCache && departureDAOCache.containsKey(cacheKey)) {
-                        return departureDAOCache.get(cacheKey);
-                    }
-                    Route route = getRouteById(dep.getRoute_id());
-                    Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.getRoute_type());
-                    if (null == route || null == direction) {
-                        return null;
-                    }
-                    DepartureDAO d = new DepartureDAO(
-                            getRouteTypeName(stop.getRoute_type()),
-                            route.getRoute_name(),
-                            route.getRoute_number(),
-                            direction.getDirection_name(),
-                            stop.getStop_name(),
-                            dep.getScheduled_departure_utc().toString(),
-                            dep.getAt_platform(),
-                            dep.getEstimated_departure_utc() == null ? null : dep.getEstimated_departure_utc().toString(),
-                            dep.getPlatform_number() == null ? null : dep.getPlatform_number().toString(),
-                            dep.getRoute_id(),
-                            dep.getStop_id(),
-                            dep.getRun_id(),
-                            dep.getDirection_id()
-                    );
-                    if (enableCache) {
-                        departureDAOCache.put(cacheKey, d, 60, TimeUnit.SECONDS);
-                    }
-                    return d;
-                }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
-                nearbyDepartures.addAll(nearby);
-            }
-        });
+        // parallel calls for destinations per stop
+        final List<Single<Set<DepartureDAO>>> listOfSingles = Collections.synchronizedList(new ArrayList<>());
+        stops.getStops().forEach(
+                stop -> {
+                    final Single<Set<DepartureDAO>> responseSingle = Single.fromCallable(() -> {
+                        return _departuresDAO(stop);
+                    }).subscribeOn(Schedulers.io());
+                    listOfSingles.add(responseSingle);
+                }
+        );
+        Flowable<Set<DepartureDAO>> last = Single.merge(listOfSingles);
+        last.blockingForEach(s -> nearbyDepartures.addAll(s));
 
         log.info("Nearby departures returning count: " + nearbyDepartures.size());
         return nearbyDepartures;
@@ -386,7 +326,8 @@ public class DepartureResource {
         t1 - keyed by trip ids, rolling 1min avg
         t5 - keyed by trip ids, rolling 5min avg
     */
-    private Double capacityAverage(String route_id, String route_type, String direction_id, String run_id, String stop_id) {
+    private Double capacityAverage(String route_id, String route_type, String direction_id, String run_id, String
+            stop_id) {
         Double cap = -1.0;
         String cacheKey = String.format("%s-%s-%s-%s-%s-%s", "t1", route_id, route_type, direction_id, run_id, stop_id);
         if (enableCache && capacityCache.containsKey(cacheKey)) {
@@ -402,7 +343,8 @@ public class DepartureResource {
         return cap;
     }
 
-    private Double vibeAverage(String route_id, String route_type, String direction_id, String run_id, String stop_id) {
+    private Double vibeAverage(String route_id, String route_type, String direction_id, String run_id, String
+            stop_id) {
         Double vib = -1.0;
         String cacheKey = String.format("%s-%s-%s-%s-%s-%s", "t1", route_id, route_type, direction_id, run_id, stop_id);
         if (enableCache && vibeCache.containsKey(cacheKey)) {
@@ -432,5 +374,98 @@ public class DepartureResource {
     private <T> Set<T> convertListToSet(List<T> list) {
         // create a set from the List
         return list.stream().collect(Collectors.toSet());
+    }
+
+    private Set<TripVibeDAO> _tripvibeDAO(Stop stop) {
+        Instant utcNow = Instant.now();
+        List<Departure> depList = Multi.createFrom().iterable(getDepartures(stop)).transform()
+                .byFilteringItemsWith(
+                        dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastSeconds, ChronoUnit.SECONDS))
+                                && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextSeconds, ChronoUnit.SECONDS)))
+                .collectItems().asList().await().indefinitely();
+        Set<Departure> departures = convertListToSet(depList);
+        log.debug("Departures count : " + departures.size());
+
+        Set<TripVibeDAO> nearby = new HashSet<TripVibeDAO>();
+        if (!departures.isEmpty()) {
+            nearby = departures.stream().map(dep -> {
+                String cacheKey = String.format("%s-%s-%s-%s-%s-%s", dep.getRoute_id().toString(), stop.getRoute_type(), dep.getDirection_id().toString(), dep.getRun_id(), dep.getStop_id(), dep.getScheduled_departure_utc().toString());
+                if (enableCache && tripVibeDAOCache.containsKey(cacheKey)) {
+                    return tripVibeDAOCache.get(cacheKey);
+                }
+                Route route = getRouteById(dep.getRoute_id());
+                Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.getRoute_type());
+                if (null == route || null == direction) {
+                    return null;
+                }
+                TripVibeDAO t = new TripVibeDAO(
+                        route.getRoute_name(),
+                        route.getRoute_number(),
+                        direction.getDirection_name(),
+                        stop.getStop_name(),
+                        dep.getScheduled_departure_utc().toString(),
+                        getRouteTypeName(stop.getRoute_type()),
+                        dep.getAt_platform(),
+                        dep.getEstimated_departure_utc() == null ? null : dep.getEstimated_departure_utc().toString(),
+                        dep.getPlatform_number() == null ? null : dep.getPlatform_number().toString(),
+                        dep.getRoute_id(),
+                        dep.getStop_id(),
+                        dep.getRun_id(),
+                        dep.getDirection_id(),
+                        capacityAverage(dep.getRoute_id().toString(), stop.getRoute_type().toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()),
+                        vibeAverage(dep.getRoute_id().toString(), stop.getRoute_type().toString(), dep.getDirection_id().toString(), dep.getRun_id().toString(), dep.getStop_id().toString()));
+                if (enableCache) {
+                    tripVibeDAOCache.put(cacheKey, t, 60, TimeUnit.SECONDS);
+                }
+                return t;
+            }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
+        }
+        return nearby;
+    }
+
+    private Set<DepartureDAO> _departuresDAO(Stop stop) {
+        Instant utcNow = Instant.now();
+        List<Departure> depList = Multi.createFrom().iterable(getDepartures(stop)).transform()
+                .byFilteringItemsWith(
+                        dep -> dep.getScheduled_departure_utc().isAfter(utcNow.minus(this.pastSeconds, ChronoUnit.SECONDS))
+                                && dep.getScheduled_departure_utc().isBefore(utcNow.plus(this.nextSeconds, ChronoUnit.SECONDS)))
+                .collectItems().asList().await().indefinitely();
+        Set<Departure> departures = convertListToSet(depList);
+        log.debug("Departure count: " + departures.size());
+
+        Set<DepartureDAO> nearby = new HashSet<DepartureDAO>();
+        if (!departures.isEmpty()) {
+            nearby = departures.stream().map(dep -> {
+                String cacheKey = String.format("%s-%s-%s-%s-%s-%s", dep.getRoute_id().toString(), stop.getRoute_type(), dep.getDirection_id().toString(), dep.getRun_id(), dep.getStop_id(), dep.getScheduled_departure_utc().toString());
+                if (enableCache && departureDAOCache.containsKey(cacheKey)) {
+                    return departureDAOCache.get(cacheKey);
+                }
+                Route route = getRouteById(dep.getRoute_id());
+                Direction direction = getDirectionById(dep.getDirection_id(), dep.getRoute_id(), stop.getRoute_type());
+                if (null == route || null == direction) {
+                    return null;
+                }
+                DepartureDAO d = new DepartureDAO(
+                        getRouteTypeName(stop.getRoute_type()),
+                        route.getRoute_name(),
+                        route.getRoute_number(),
+                        direction.getDirection_name(),
+                        stop.getStop_name(),
+                        dep.getScheduled_departure_utc().toString(),
+                        dep.getAt_platform(),
+                        dep.getEstimated_departure_utc() == null ? null : dep.getEstimated_departure_utc().toString(),
+                        dep.getPlatform_number() == null ? null : dep.getPlatform_number().toString(),
+                        dep.getRoute_id(),
+                        dep.getStop_id(),
+                        dep.getRun_id(),
+                        dep.getDirection_id()
+                );
+                if (enableCache) {
+                    departureDAOCache.put(cacheKey, d, 60, TimeUnit.SECONDS);
+                }
+                return d;
+            }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
+        }
+        return nearby;
     }
 }
