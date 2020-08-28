@@ -1,0 +1,20 @@
+{
+  "disruptions": {},
+  "status": {
+    "health": 1,
+    "version": "3.0"
+  },
+  "stops": [
+    {
+      "disruption_ids": [],
+      "route_type": 2,
+      "stop_distance": 169.661224,
+      "stop_id": 20420,
+      "stop_latitude": -37.89872,
+      "stop_longitude": 145.089767,
+      "stop_name": "Oakleigh SC/Atherton Rd ",
+      "stop_sequence": 0,
+      "stop_suburb": "Oakleigh"
+    }
+  ]
+}
