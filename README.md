@@ -57,4 +57,3 @@ put k2 v2
 ls
 get k1
 ```
-
