@@ -428,7 +428,7 @@ public class RoutesResource {
         String rnn = r.getJSONObject("route").getString("route_number");
         try {
             RouteNameNumber rnnObj = new RouteNameNumber(rn, rnn);
-            routeNameNumberCache.put(route_id, rnnObj, 3600 * 12, TimeUnit.SECONDS);
+            routeNameNumberCache.put(route_id, rnnObj, 3600L * 12L, TimeUnit.SECONDS);
         } catch (Exception ex) {
             log.warn("Can't cache routeNameNumber '" + rnn + "'. Reason: " + ex.getMessage());
         }
@@ -452,7 +452,7 @@ public class RoutesResource {
             _rt.put(_rts.optString("direction_id"), _rts.optString("direction_name"));
         }
         String dn = _rt.get(direction_id);
-        directionNameCache.put(direction_id, new DirectionName(direction_id, dn), 3600 * 12, TimeUnit.SECONDS);
+        directionNameCache.put(direction_id, new DirectionName(direction_id, dn), 3600L * 12L, TimeUnit.SECONDS);
         return dn;
     }
 
@@ -550,7 +550,7 @@ public class RoutesResource {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         long now = new Date().getTime();
-        long minutes = (new Random().nextInt(10) + 1) * 60000;
+        long minutes = (new Random().nextInt(10) + 1) * 60000L;
         Date date = new Date(now + minutes);
         return df.format(date);
     }

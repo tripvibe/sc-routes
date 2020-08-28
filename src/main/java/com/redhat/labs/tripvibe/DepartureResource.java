@@ -223,7 +223,7 @@ public class DepartureResource {
         }
 
         RouteResponse route = routeService.route(routeId, devid, signature.generate("/v3/routes/" + routeId));
-        routesCache.put(routeId, route.route, 3600 * 12, TimeUnit.SECONDS);
+        routesCache.put(routeId, route.route, 3600L * 12L, TimeUnit.SECONDS);
         return route.route;
     }
 
@@ -418,7 +418,7 @@ public class DepartureResource {
                     tripVibeDAOCache.put(cacheKey, t, 60, TimeUnit.SECONDS);
                 }
                 return t;
-            }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
+            }).filter(out -> out != null).collect(Collectors.toSet());
         }
         return nearby;
     }
@@ -464,7 +464,7 @@ public class DepartureResource {
                     departureDAOCache.put(cacheKey, d, 60, TimeUnit.SECONDS);
                 }
                 return d;
-            }).filter(out -> out != null && !out.equals(0)).collect(Collectors.toSet());
+            }).filter(out -> out != null).collect(Collectors.toSet());
         }
         return nearby;
     }

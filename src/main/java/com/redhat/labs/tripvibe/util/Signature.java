@@ -36,14 +36,14 @@ public class Signature {
         byte[] keyBytes = privateKey.getBytes();
         byte[] uriBytes = uriWithDeveloperID.toString().getBytes();
         Key signingKey = new SecretKeySpec(keyBytes, HMAC_SHA1_ALGORITHM);
-        Mac mac = null;
+        byte[] signatureBytes = new byte [0];
         try {
-            mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+            Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
             mac.init(signingKey);
+            signatureBytes = mac.doFinal(uriBytes);
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             e.printStackTrace();
         }
-        byte[] signatureBytes = mac.doFinal(uriBytes);
         StringBuffer signature = new StringBuffer(signatureBytes.length * 2);
         for (byte signatureByte : signatureBytes) {
             int intVal = signatureByte & 0xff;
