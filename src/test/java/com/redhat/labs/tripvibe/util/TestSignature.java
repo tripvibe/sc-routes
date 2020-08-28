@@ -2,7 +2,6 @@ package com.redhat.labs.tripvibe.util;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest

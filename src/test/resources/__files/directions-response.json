@@ -1,0 +1,22 @@
+{
+  "directions": [
+    {
+      "direction_id": 179,
+      "direction_name": "Chadstone SC",
+      "route_direction_description": "Departs from the terminus at Dandenong Railway Station and runs via Rudduck St,George St, Walker St, Langhorne S, Lonsdale St, Clow St, Cleeland St, Heatherton Rd, Boyd St, Curtin Cres, Menzies Av, Gladstone Rd, Police Rd, Haverbrack Dr, Wellington Rd, Garnett Rd, Whalley Dr, Grandview Rd and Jells Rd to Wheelers Hill Shopping Centre. It then runs via Jells Rd, Phoenix Dr, Columbia Dr, Brandon Park Dr and Wellington Rd to Monash University (Clayton). From Monash University (Clayton) bus operates via Wellington Rd, Princes Hwy, Atherton Rd and Station St to Oakleigh Railway Station, then via Portman St, Warrigul Rd, Middle Rd and Eastern Access Rd to the terminus at Chadstone Shopping Centre. RELATED ROUTES: 802 & 862.",
+      "route_id": 8934,
+      "route_type": 2
+    },
+    {
+      "direction_id": 265,
+      "direction_name": "Dandenong",
+      "route_direction_description": "** This bus route is pre-pay only. Before you board, make sure your myki has enough value to cover your entire journey ** - Departs from the terminus at Chadstone Shopping Centre runs via Eastern Access Rd, Middle Rd, Warrigal Rd, Atherton Rd, Station St, Chester St and Portman St to Oakleigh Railway Station. Then via the Shopping Centre Subway, Hanover St, Atherton Rd and Princes Hwy and Wellington Rd to Monash University (Clayton). From Monash University bus runs via Wellington Rd, Brandon Park Dr, Columbia Dr, Phoenix Dr and Jells Rd to Wheelers Hill Shopping Centre. Then via Jells Rd, Grandview Rd, Whalley Dr, Garnett Rd, Wellington Rd, Haverbrack Dr, Police Rd, Gladstone Rd, Menzies Av, Curtin Cres, Boyd St, Heatherton Rd, Cleeland St, Clow St, Lonsdale St, Langhorne St, Walker St, George St and Rudduck St to terminate at Dandenong Railway Station. RELATED ROUTES: 802 & 862.",
+      "route_id": 8934,
+      "route_type": 2
+    }
+  ],
+  "status": {
+    "health": 1,
+    "version": "3.0"
+  }
+}

@@ -1,6 +1,5 @@
 package com.redhat.labs.tripvibe.util;
 
-import com.redhat.labs.tripvibe.DepartureResource;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +46,9 @@ public class Signature {
             mac.init(signingKey);
             signatureBytes = mac.doFinal(uriBytes);
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            log.error("signature error: " + e.getMessage());
+            log.error("signature error: {}", e.getMessage());
         }
-        StringBuffer signature = new StringBuffer(signatureBytes.length * 2);
+        StringBuilder signature = new StringBuilder(signatureBytes.length * 2);
         for (byte signatureByte : signatureBytes) {
             int intVal = signatureByte & 0xff;
             if (intVal < 0x10) {
