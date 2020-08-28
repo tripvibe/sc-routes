@@ -409,7 +409,7 @@ public class RoutesResource {
             _rt.put(_rts.optString("route_type"), _rts.optString("route_type_name"));
         }
         String routeTypeName = _rt.get(route_type);
-        routeTypeCache.put(route_type, new RouteType(route_type, routeTypeName), 3600 * 24, TimeUnit.SECONDS);
+        routeTypeCache.put(route_type, new RouteType(route_type, routeTypeName), 3600L * 24L, TimeUnit.SECONDS);
         return routeTypeName;
     }
 

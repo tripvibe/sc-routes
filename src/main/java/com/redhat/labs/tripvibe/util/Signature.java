@@ -1,6 +1,9 @@
 package com.redhat.labs.tripvibe.util;
 
+import com.redhat.labs.tripvibe.DepartureResource;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -11,6 +14,8 @@ import java.security.NoSuchAlgorithmException;
 
 @ApplicationScoped
 public class Signature {
+
+    private final Logger log = LoggerFactory.getLogger(Signature.class);
 
     @ConfigProperty(name = "com.redhat.labs.tripvibe.developerId")
     public String developerId;
@@ -42,7 +47,7 @@ public class Signature {
             mac.init(signingKey);
             signatureBytes = mac.doFinal(uriBytes);
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            e.printStackTrace();
+            log.error("signature error: " + e.getMessage());
         }
         StringBuffer signature = new StringBuffer(signatureBytes.length * 2);
         for (byte signatureByte : signatureBytes) {

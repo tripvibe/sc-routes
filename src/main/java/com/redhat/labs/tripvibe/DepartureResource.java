@@ -46,10 +46,10 @@ public class DepartureResource {
     @ConfigProperty(name = "com.redhat.labs.tripvibe.developerId")
     public String devid;
 
-    public static Map<Integer, Route> localRoutesCache = new HashMap<>();
-    public static Map<Integer, Instant> localRoutesCacheAge = new HashMap<>();
-    public static Map<String, Direction> localDirectionsCache = new HashMap<>();
-    public static Map<String, Instant> localDirectionsCacheAge = new HashMap<>();
+    protected static final Map<Integer, Route> localRoutesCache = new HashMap<>();
+    protected static final Map<Integer, Instant> localRoutesCacheAge = new HashMap<>();
+    protected static final Map<String, Direction> localDirectionsCache = new HashMap<>();
+    protected static final Map<String, Instant> localDirectionsCacheAge = new HashMap<>();
     private Integer maxCacheAgeHour = 24; //keep the cached objects upto 24 hours
     // use to retrieve departures for the next 2 hours
     private int nextSeconds = 3600 * 2;
