@@ -170,11 +170,11 @@ public class RoutesResource {
             hidden = false)
     public Publisher<List<RouteDAO>> stream(@PathParam String latlong, @PathParam String distance) {
         Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(60)).onOverflow().drop();
-        return ticks.on().subscribed(subscription -> log.info("We are subscribed!"))
+        return ticks.on().request(subscription -> log.info("We are subscribed!"))
                 .on().cancellation(() -> log.info("Downstream has cancelled the interaction"))
                 .onFailure().invoke(failure -> log.warn("Failed with " + failure.getMessage()))
                 .onCompletion().invoke(() -> log.info("Completed"))
-                .onItem().produceMulti(
+                .onItem().transformToMulti(
                         x -> departMulti(latlong, distance)
                 ).merge();
     }
@@ -202,11 +202,11 @@ public class RoutesResource {
             hidden = false)
     public Publisher<List<RouteDAO>> streamSearch(@PathParam String route_types, @PathParam String search_term) {
         Multi<Long> ticks = Multi.createFrom().ticks().every(Duration.ofSeconds(60)).onOverflow().drop();
-        return ticks.on().subscribed(subscription -> log.info("We are subscribed!"))
+        return ticks.on().request(subscription -> log.info("We are subscribed!"))
                 .on().cancellation(() -> log.info("Downstream has cancelled the interaction"))
                 .onFailure().invoke(failure -> log.warn("Failed with " + failure.getMessage()))
                 .onCompletion().invoke(() -> log.info("Completed"))
-                .onItem().produceMulti(
+                .onItem().transformToMulti(
                         x -> departMultiSearch(route_types, search_term)
                 ).merge();
     }
